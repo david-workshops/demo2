@@ -297,38 +297,105 @@ function playNote(note: Note) {
   const now = audioContext.currentTime;
   const pedals = musicState.getPedalStatus();
 
-  // Create oscillator
-  const oscillator = audioContext.createOscillator();
-  oscillator.type = "sine"; // Piano-like sound
-  oscillator.frequency.value = midiToFrequency(note.midiNumber);
-
-  // Create note-specific gain node for envelope
-  const noteGain = audioContext.createGain();
-  noteGain.gain.value = 0;
-
-  // Connect nodes
-  oscillator.connect(noteGain);
-  noteGain.connect(gainNode);
-
   // Apply envelope
   const velocityGain = note.velocity / 127;
-  const attackTime = 0.01;
-  const releaseTime = 0.3;
-
-  // Attack
-  noteGain.gain.setValueAtTime(0, now);
-  noteGain.gain.linearRampToValueAtTime(velocityGain, now + attackTime);
+  const attackTime = 0.03; // Slightly slower attack for natural sound
+  const releaseTime = 0.5; // Longer release for rustling effect
 
   // Calculate end time based on sustain pedal
   const sustainMultiplier = pedals.sustain > 0.5 ? 3 : 1;
   const noteDuration = (note.duration / 1000) * sustainMultiplier;
   const endTime = now + noteDuration;
 
-  // Release
-  noteGain.gain.setValueAtTime(velocityGain, endTime - releaseTime);
+  // Create main oscillator
+  const oscillator = audioContext.createOscillator();
+
+  // Use "triangle" for a softer leaf-rustling base sound instead of sine
+  oscillator.type = "triangle";
+  oscillator.frequency.value = midiToFrequency(note.midiNumber);
+
+  // Create note-specific gain node for envelope
+  const noteGain = audioContext.createGain();
+  noteGain.gain.value = 0;
+
+  // Create filter to shape the sound into "rustling leaves" effect
+  const filter = audioContext.createBiquadFilter();
+  filter.type = "highpass";
+  filter.frequency.value = 800; // Higher frequencies for leaf rustling sound
+  filter.Q.value = 1.5;
+
+  // Add a subtle modulation for rustling effect
+  const rustleModulator = audioContext.createOscillator();
+  rustleModulator.type = "sawtooth";
+  rustleModulator.frequency.value = 4 + Math.random() * 8; // Randomized rustling speed
+
+  const rustleGain = audioContext.createGain();
+  rustleGain.gain.value = 50 + Math.random() * 100; // Random rustling intensity
+
+  // Connect the rustling modulation
+  rustleModulator.connect(rustleGain);
+  rustleGain.connect(filter.frequency);
+
+  // Create hummingbird wing sound effect for higher notes (above 70)
+  let hummingbirdOscillator;
+  let hummingbirdGain;
+  if (note.midiNumber > 70 && Math.random() > 0.7) {
+    // Create rapid frequency oscillator for hummingbird wing effect
+    hummingbirdOscillator = audioContext.createOscillator();
+    hummingbirdOscillator.type = "sine";
+    hummingbirdOscillator.frequency.value = midiToFrequency(
+      note.midiNumber + 24,
+    ); // Higher pitched
+
+    // Create tremolo for wing flapping sound
+    const tremoloOsc = audioContext.createOscillator();
+    tremoloOsc.type = "square";
+    tremoloOsc.frequency.value = 40 + Math.random() * 20; // Rapid wing beats (40-60 Hz)
+
+    hummingbirdGain = audioContext.createGain();
+    hummingbirdGain.gain.value = 0;
+
+    const tremoloGain = audioContext.createGain();
+    tremoloGain.gain.value = 0.8;
+
+    // Connect hummingbird sound components
+    tremoloOsc.connect(tremoloGain);
+    tremoloGain.connect(hummingbirdGain.gain);
+    hummingbirdOscillator.connect(hummingbirdGain);
+    hummingbirdGain.connect(gainNode);
+
+    // Start tremolo and hummingbird oscillator
+    tremoloOsc.start(now);
+    tremoloOsc.stop(endTime + 0.1);
+    hummingbirdOscillator.start(now);
+    hummingbirdOscillator.stop(endTime + 0.1);
+
+    // Set volume envelope for hummingbird sound
+    hummingbirdGain.gain.setValueAtTime(0, now);
+    hummingbirdGain.gain.linearRampToValueAtTime(
+      velocityGain * 0.2,
+      now + 0.05,
+    );
+    hummingbirdGain.gain.setValueAtTime(velocityGain * 0.2, endTime - 0.1);
+    hummingbirdGain.gain.linearRampToValueAtTime(0, endTime);
+  }
+
+  // Connect the main sound nodes
+  oscillator.connect(filter);
+  filter.connect(noteGain);
+  noteGain.connect(gainNode);
+
+  // Attack with a more organic curve for leaves
+  noteGain.gain.setValueAtTime(0, now);
+  noteGain.gain.linearRampToValueAtTime(velocityGain * 0.7, now + attackTime);
+
+  // Release with a gentler slope
+  noteGain.gain.setValueAtTime(velocityGain * 0.7, endTime - releaseTime);
   noteGain.gain.linearRampToValueAtTime(0, endTime);
 
-  // Start and schedule stop
+  // Start the oscillators
+  rustleModulator.start(now);
+  rustleModulator.stop(endTime + 0.1);
   oscillator.start(now);
   oscillator.stop(endTime + 0.1);
 
@@ -376,7 +443,13 @@ function stopAllNotes() {
       gainNode.gain.cancelScheduledValues(now);
       gainNode.gain.setValueAtTime(gainNode.gain.value, now);
       gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
-      setTimeout(() => oscillator.stop(), 200);
+      setTimeout(() => {
+        try {
+          oscillator.stop();
+        } catch (e) {
+          // Oscillator might already be stopped
+        }
+      }, 200);
     });
     activeNotes.clear();
   }
