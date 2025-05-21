@@ -94,13 +94,14 @@ function applyWeatherInfluence(weather: WeatherData | null) {
     settings.sustainProbability = 0.1; // More sustain
     settings.velocityRange = { min: 40, max: 70 }; // Softer
   }
-  // Rain conditions
+  // Rain conditions - enhanced to sound like wind + rainfall
   else if (
     [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)
   ) {
-    settings.sustainProbability = 0.15; // Much more sustain
-    settings.noteDurationRange = { min: 200, max: 1500 }; // Shorter notes
-    settings.density = 0.8; // More notes
+    settings.sustainProbability = 0.25; // Much more sustain for flowing water effect
+    settings.noteDurationRange = { min: 100, max: 2000 }; // Varied note durations for rainfall patterns
+    settings.density = 0.85; // More notes for dense rainfall
+    settings.velocityRange = { min: 30, max: 90 }; // Dynamic variation for wind gusts and rain intensity
   }
   // Snow conditions
   else if ([71, 73, 75, 77, 85, 86].includes(code)) {
@@ -280,7 +281,16 @@ function decidePedal(weather: WeatherData | null): Pedal | null {
 
   // Weather-influenced sustain pedal probability
   if (rand < settings.sustainProbability && sustainPedalEnabled) {
-    return { type: "sustain", value: Math.random() * 0.5 + 0.5 }; // 0.5-1.0
+    // For rainy conditions, use higher sustain values for flowing water effect
+    const isRain =
+      weather &&
+      [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(
+        weather.weatherCode,
+      );
+    return {
+      type: "sustain",
+      value: isRain ? Math.random() * 0.3 + 0.7 : Math.random() * 0.5 + 0.5, // 0.7-1.0 for rain, 0.5-1.0 for others
+    };
   } else if (rand < settings.sustainProbability * 2) {
     return { type: "sostenuto", value: 1 };
   } else if (rand < settings.sustainProbability * 3) {
