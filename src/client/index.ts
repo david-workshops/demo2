@@ -232,7 +232,7 @@ function updateWeatherImpactDisplay(weather: WeatherData) {
     [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)
   ) {
     // Rain
-    impact.push("More sustain pedal, softer attacks");
+    impact.push("Wind and rainfall patterns, flowing effect");
   } else if ([71, 73, 75, 77, 85, 86].includes(code)) {
     // Snow
     impact.push("Slower, gentler passages");
