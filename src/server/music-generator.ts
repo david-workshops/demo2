@@ -28,8 +28,25 @@ let density = 0.7; // Probability of generating a note vs. silence
 function applyWeatherInfluence(weather: WeatherData | null) {
   // Reset to defaults if no weather data
   if (!weather) {
-    density = defaultSettings.density;
-    return defaultSettings;
+    // Special case: create "leaves rustling with hummingbird" settings
+    const leafRustlingSettings = { ...defaultSettings };
+    leafRustlingSettings.density = 0.5; // Sparser notes for gentle leaf sounds
+    leafRustlingSettings.minOctave = 3; // Medium-high register for leaves
+    leafRustlingSettings.maxOctave = 6; // High enough for hummingbird occasionally
+    leafRustlingSettings.noteDurationRange = { min: 400, max: 2000 }; // Varied durations for rustling effect
+    leafRustlingSettings.velocityRange = { min: 30, max: 70 }; // Softer dynamics for leaves
+    leafRustlingSettings.sustainProbability = 0.12; // More sustain for overlapping leaf sounds
+    leafRustlingSettings.tempo = 85; // Slightly slower for gentle rustling
+
+    // Set current scale to one that feels like nature
+    if (Math.random() < 0.7) {
+      currentScale = "pentatonicMajor"; // More peaceful, nature-like scale
+    } else {
+      currentScale = "lydian"; // Bright, airy alternative
+    }
+
+    density = leafRustlingSettings.density;
+    return leafRustlingSettings;
   }
 
   // Create settings object with defaults
@@ -151,9 +168,31 @@ function generateRandomNote(
     max: settings.maxOctave,
   };
 
-  const octave =
-    Math.floor(Math.random() * (octaveRange.max - octaveRange.min + 1)) +
-    octaveRange.min;
+  // For leaf rustling + hummingbird sounds, occasionally add very high notes (hummingbird)
+  let octave;
+  if (!weather && Math.random() < 0.15) {
+    // 15% chance for a hummingbird note when no weather data
+    // Higher octaves for hummingbird sounds
+    octave = 6 + Math.floor(Math.random() * 2); // Octaves 6-7
+
+    // Use shorter durations for hummingbird notes
+    const velocity = Math.floor(Math.random() * 30) + 50; // 50-80 velocity (medium-soft)
+    const duration = Math.random() * 300 + 100; // 100-400ms (quick, hummingbird-like)
+
+    return {
+      name: NOTES[note],
+      octave,
+      midiNumber: note + octave * 12 + 12,
+      velocity,
+      duration,
+    };
+  } else {
+    // Normal note generation
+    octave =
+      Math.floor(Math.random() * (octaveRange.max - octaveRange.min + 1)) +
+      octaveRange.min;
+  }
+
   const midiNum = note + octave * 12 + 12; // MIDI note numbers start at C0 = 12
 
   // Velocity influenced by weather
@@ -231,23 +270,38 @@ function generateChord(weather: WeatherData | null, numNotes = 3): Note[] {
 function maybeChangeMusicalContext(): void {
   const now = Date.now();
 
-  // Change approximately every 3-5 minutes
-  if (now - lastModeChangeTime > 3 * 60 * 1000 && Math.random() < 0.01) {
-    // 1% chance per check when we're past the minimum time
+  // For leaf rustling and hummingbird sound, we want to maintain more consistent nature-like scales
+  // so we reduce the frequency of changes and limit to more appropriate scales
+
+  // Change approximately every 4-7 minutes (less frequent changes for a more consistent natural ambiance)
+  if (now - lastModeChangeTime > 4 * 60 * 1000 && Math.random() < 0.007) {
+    // 0.7% chance per check when we're past the minimum time
     const changeType = Math.floor(Math.random() * 3);
 
     if (changeType === 0) {
       // Change key
       currentKey = Math.floor(Math.random() * 12);
     } else if (changeType === 1) {
-      // Change scale
-      const scaleNames = Object.keys(SCALES) as Scale[];
-      currentScale = scaleNames[Math.floor(Math.random() * scaleNames.length)];
+      // Change scale - limit to scales appropriate for nature sounds
+      const natureScales: Scale[] = [
+        "pentatonicMajor",
+        "pentatonicMinor",
+        "lydian",
+        "major",
+      ];
+      currentScale =
+        natureScales[Math.floor(Math.random() * natureScales.length)];
     } else {
       // Change both
       currentKey = Math.floor(Math.random() * 12);
-      const scaleNames = Object.keys(SCALES) as Scale[];
-      currentScale = scaleNames[Math.floor(Math.random() * scaleNames.length)];
+      const natureScales: Scale[] = [
+        "pentatonicMajor",
+        "pentatonicMinor",
+        "lydian",
+        "major",
+      ];
+      currentScale =
+        natureScales[Math.floor(Math.random() * natureScales.length)];
     }
 
     lastModeChangeTime = now;
@@ -264,6 +318,23 @@ function decidePedal(weather: WeatherData | null): Pedal | null {
   const rand = Math.random();
   const now = Date.now();
 
+  // For leaf rustling sound, we want more gentle sustain to create overlapping textures
+  if (!weather) {
+    // Using our special "leaves rustling" case
+    // Use more frequent but gentler sustain pedal for overlapping leaf sounds
+    if (rand < 0.18) {
+      // Higher probability for more consistent background texture
+      return { type: "sustain", value: 0.3 + Math.random() * 0.4 }; // 0.3-0.7 (moderate sustain)
+    }
+    // Occasionally use soft pedal for gentler attack
+    else if (rand < 0.3) {
+      return { type: "soft", value: 0.6 + Math.random() * 0.4 }; // 0.6-1.0 (more pronounced soft pedal)
+    }
+
+    return null;
+  }
+
+  // Regular weather-based logic for other cases
   // Ensure long periods without sustain pedal (at least 15-30 seconds)
   const timeSinceLastOff = now - lastSustainOffTime;
   if (
