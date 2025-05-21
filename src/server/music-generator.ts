@@ -98,9 +98,18 @@ function applyWeatherInfluence(weather: WeatherData | null) {
   else if (
     [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)
   ) {
-    settings.sustainProbability = 0.15; // Much more sustain
-    settings.noteDurationRange = { min: 200, max: 1500 }; // Shorter notes
-    settings.density = 0.8; // More notes
+    settings.sustainProbability = 0.25; // Much more sustain for rainforest ambience
+    settings.noteDurationRange = { min: 100, max: 2500 }; // Both very short droplet notes and longer ambient sounds
+    settings.density = 0.85; // More notes for a richer rainforest environment
+    settings.velocityRange = { min: 35, max: 90 }; // Varied dynamics for different droplet sounds
+    // Occasionally use minor or lydian scale for rainforest ambience
+    if (
+      Math.random() < 0.3 &&
+      currentScale !== "minor" &&
+      currentScale !== "lydian"
+    ) {
+      currentScale = Math.random() < 0.6 ? "minor" : "lydian";
+    }
   }
   // Snow conditions
   else if ([71, 73, 75, 77, 85, 86].includes(code)) {
