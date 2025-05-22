@@ -29,11 +29,22 @@ function applyWeatherInfluence(weather: WeatherData | null) {
   // Reset to defaults if no weather data
   if (!weather) {
     density = defaultSettings.density;
+    
+    // Ensure we're in a major key for that joyful Christmas sound
+    if (currentScale !== "major" && currentScale !== "pentatonicMajor") {
+      currentScale = "major";
+    }
+    
     return defaultSettings;
   }
 
   // Create settings object with defaults
   const settings = { ...defaultSettings };
+  
+  // Ensure we start with a major key for Christmas carol base
+  if (currentScale !== "major" && currentScale !== "pentatonicMajor") {
+    currentScale = "major";
+  }
 
   // Modify based on temperature
   if (weather.temperature < 0) {
@@ -43,7 +54,8 @@ function applyWeatherInfluence(weather: WeatherData | null) {
     settings.maxOctave = 5;
     settings.noteDurationRange = { min: 800, max: 3500 };
     settings.velocityRange = { min: 40, max: 80 };
-    if (Math.random() < 0.6 && currentScale === "major") {
+    // Allow changing to minor scale with cold temperature
+    if (Math.random() < 0.6) {
       currentScale = "minor";
     }
   } else if (weather.temperature < 10) {
@@ -52,7 +64,8 @@ function applyWeatherInfluence(weather: WeatherData | null) {
     settings.minOctave = 2;
     settings.maxOctave = 6;
     settings.noteDurationRange = { min: 600, max: 3000 };
-    if (Math.random() < 0.4 && currentScale === "major") {
+    // Allow changing to minor scale with cool temperature
+    if (Math.random() < 0.4) {
       currentScale = "minor";
     }
   } else if (weather.temperature > 30) {
@@ -62,16 +75,15 @@ function applyWeatherInfluence(weather: WeatherData | null) {
     settings.maxOctave = 7;
     settings.noteDurationRange = { min: 300, max: 1800 };
     settings.velocityRange = { min: 70, max: 110 };
-    if (Math.random() < 0.6 && currentScale === "minor") {
-      currentScale = "major";
-    }
+    // Ensure major with very hot temperature
+    currentScale = "major";
   } else if (weather.temperature > 25) {
     // Warm: slightly faster, mid-high register
     settings.tempo = 115;
     settings.minOctave = 3;
     settings.maxOctave = 7;
     settings.noteDurationRange = { min: 400, max: 2200 };
-    if (Math.random() < 0.4 && currentScale === "minor") {
+    if (Math.random() < 0.4) {
       currentScale = "lydian";
     }
   }
@@ -113,37 +125,21 @@ function applyWeatherInfluence(weather: WeatherData | null) {
     settings.velocityRange = { min: 40, max: 127 }; // Dramatic dynamics
     settings.density = 0.9; // More dense
   }
-  // Christmas carol mode
-  else if (code === 999) {
-    // Joyful Christmas carol settings
-    settings.tempo = 110; // Moderate, cheerful tempo
-    settings.density = 0.75; // Balanced note density
-    settings.minOctave = 3; // Middle register
-    settings.maxOctave = 6; // Higher register for bright sound
-    settings.noteDurationRange = { min: 350, max: 2000 }; // Mix of shorter and longer notes
-    settings.velocityRange = { min: 65, max: 95 }; // Moderate to bright dynamics
-    settings.sustainProbability = 0.08; // Moderate sustain
-    
-    // Ensure we're in a major key for that joyful sound
-    if (currentScale !== "major" && currentScale !== "pentatonicMajor") {
-      currentScale = "major";
-    }
-  }
 
   // Update global density
   density = settings.density;
 
   return settings;
 }
-// Weather influence settings
+// Christmas carol as base settings
 const defaultSettings = {
-  tempo: 100, // Base tempo (events per minute)
-  density: 0.7, // Probability of generating notes vs. silence
-  minOctave: 1, // Minimum octave
-  maxOctave: 7, // Maximum octave
-  sustainProbability: 0.05, // Probability of using sustain pedal
-  velocityRange: { min: 60, max: 100 }, // Velocity range for notes
-  noteDurationRange: { min: 500, max: 2500 }, // Duration range in ms
+  tempo: 110, // Moderate, cheerful tempo
+  density: 0.75, // Balanced note density
+  minOctave: 3, // Middle register
+  maxOctave: 6, // Higher register for bright sound
+  sustainProbability: 0.08, // Moderate sustain
+  velocityRange: { min: 65, max: 95 }, // Moderate to bright dynamics
+  noteDurationRange: { min: 350, max: 2000 }, // Mix of shorter and longer notes
 };
 
 // Helper function to get notes in the current key and scale
