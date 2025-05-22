@@ -113,6 +113,22 @@ function applyWeatherInfluence(weather: WeatherData | null) {
     settings.velocityRange = { min: 40, max: 127 }; // Dramatic dynamics
     settings.density = 0.9; // More dense
   }
+  // Christmas carol mode
+  else if (code === 999) {
+    // Joyful Christmas carol settings
+    settings.tempo = 110; // Moderate, cheerful tempo
+    settings.density = 0.75; // Balanced note density
+    settings.minOctave = 3; // Middle register
+    settings.maxOctave = 6; // Higher register for bright sound
+    settings.noteDurationRange = { min: 350, max: 2000 }; // Mix of shorter and longer notes
+    settings.velocityRange = { min: 65, max: 95 }; // Moderate to bright dynamics
+    settings.sustainProbability = 0.08; // Moderate sustain
+    
+    // Ensure we're in a major key for that joyful sound
+    if (currentScale !== "major" && currentScale !== "pentatonicMajor") {
+      currentScale = "major";
+    }
+  }
 
   // Update global density
   density = settings.density;

@@ -178,6 +178,7 @@ function getWeatherDescription(code: number): string {
     95: "Thunderstorm",
     96: "Thunderstorm with slight hail",
     99: "Thunderstorm with heavy hail",
+    999: "Christmas carol",
   };
 
   return weatherCodes[code] || "Unknown";
@@ -239,6 +240,9 @@ function updateWeatherImpactDisplay(weather: WeatherData) {
   } else if ([95, 96, 99].includes(code)) {
     // Thunderstorm
     impact.push("Dramatic dynamics, cluster chords");
+  } else if (code === 999) {
+    // Christmas carol
+    impact.push("Joyful Christmas carol, bright major key");
   }
 
   weatherImpactDisplay.textContent = impact.join(", ");
