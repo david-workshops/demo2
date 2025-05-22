@@ -58,21 +58,14 @@ describe("Music Generator", () => {
     expect(eventTypes.size).toBeGreaterThanOrEqual(3);
   });
   
-  it("should apply Christmas carol settings for code 999", () => {
-    // Create mock weather data with Christmas carol code
-    const christmasWeather = {
-      temperature: 20,
-      weatherCode: 999,
-      weatherDescription: "Christmas carol"
-    };
-    
-    // Generate events with Christmas carol weather
+  it("should use Christmas carol settings as the base", () => {
+    // Generate events without weather data to check default settings
     const events = [];
     for (let i = 0; i < 20; i++) {
-      events.push(generateMidiEvent(christmasWeather));
+      events.push(generateMidiEvent(null));
     }
     
-    // Check for Christmas carol characteristics
+    // Check for Christmas carol characteristics in default settings
     const noteEvents = events.filter(event => 
       event.type === "note" || event.type === "chord" || event.type === "counterpoint"
     );
@@ -80,7 +73,7 @@ describe("Music Generator", () => {
     // Should have some note events
     expect(noteEvents.length).toBeGreaterThan(0);
     
-    // Check scale - should be major for Christmas carol
+    // Check scale - should be major by default for Christmas carol
     const scalesUsed = new Set();
     noteEvents.forEach(event => {
       if (event.type === "note" || event.type === "chord" || event.type === "counterpoint") {
