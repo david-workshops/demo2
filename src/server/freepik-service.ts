@@ -131,7 +131,7 @@ export class FreepikService {
   public setUsePlaceholder(value: boolean) {
     const wasPlaceholder = this.usePlaceholder;
     this.usePlaceholder = value;
-    
+
     // Return whether we switched from placeholder to API mode
     // This will be useful for triggering immediate image generation
     return wasPlaceholder && !value;
@@ -254,7 +254,7 @@ export class FreepikService {
   // Ensure the cache directory exists
   private async ensureCacheDirectory(branchName: string): Promise<string> {
     const cacheDir = path.join(process.cwd(), "cached-images", branchName);
-    
+
     try {
       // Create the directory if it doesn't exist (recursive)
       if (!fs.existsSync(cacheDir)) {
@@ -274,27 +274,27 @@ export class FreepikService {
       // Skip saving CSS gradients
       return;
     }
-    
+
     try {
       const branchName = await this.getCurrentGitBranch();
       const cacheDir = await this.ensureCacheDirectory(branchName);
-      
+
       // Generate a unique filename based on timestamp
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const filename = path.join(cacheDir, `image-${timestamp}.jpg`);
-      
+
       // Fetch the image
       const response = await fetch(imageUrl);
-      
+
       if (!response.ok) {
         throw new Error(
-          `Failed to fetch image: ${response.status} ${response.statusText}`
+          `Failed to fetch image: ${response.status} ${response.statusText}`,
         );
       }
-      
+
       // Get image as buffer
       const imageBuffer = Buffer.from(await response.arrayBuffer());
-      
+
       // Save to disk
       fs.writeFileSync(filename, imageBuffer);
       console.log(`Saved image to ${filename}`);
@@ -375,7 +375,9 @@ export class FreepikService {
         }
       }
 
-      console.log(`Requesting image generation from Freepik API with resolution: ${requestBody.resolution}...`);
+      console.log(
+        `Requesting image generation from Freepik API with resolution: ${requestBody.resolution}...`,
+      );
 
       // Step 1: Create the task
       const taskResponse = await this.createImageTask(requestBody);
@@ -385,10 +387,10 @@ export class FreepikService {
 
       this.requestStats.successfulRequests++;
       this.requestStats.pendingRequest = false;
-      
+
       // Mark that we've generated at least one image
       this.firstImageGenerated = true;
-      
+
       // Save the image to the cache folder
       await this.saveImageToDisk(imageUrl);
 
