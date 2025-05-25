@@ -257,7 +257,7 @@ export class FreepikService {
       // Create request body according to Freepik API documentation
       const requestBody: FreepikImageGenerationRequest = {
         prompt: prompt,
-        resolution: "2k", // Default resolution
+        resolution: "4k", // Using 4k resolution for higher quality images
         aspect_ratio: "square_1_1", // Default aspect ratio
         realism: true, // Default value
         creative_detailing: 33, // Default value

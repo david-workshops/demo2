@@ -207,6 +207,8 @@ body {
   border-radius: 8px;
   padding: 15px;
   font-size: 0.95rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .debug-content h2,
@@ -214,6 +216,7 @@ body {
   margin-bottom: 12px;
   text-align: center;
   color: #fff;
+  flex-shrink: 0;
 }
 
 .debug-content h2 {
@@ -235,17 +238,23 @@ body {
   padding: 6px;
   background-color: rgba(50, 50, 50, 0.5);
   border-radius: 4px;
+  min-height: 34px;
 }
 
 .info-label {
   font-weight: bold;
   min-width: 150px;
   color: #8af;
+  flex-shrink: 0;
 }
 
 .info-value {
   font-family: monospace;
   word-break: break-word;
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: 80px;
+  white-space: pre-wrap;
 }
 
 /* Status indicator colors */

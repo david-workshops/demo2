@@ -155,7 +155,12 @@ function updateNotesInfo() {
       .join(", ");
     const midiNumbers = notesPlaying.map((n) => n.midiNumber);
 
-    notesInfoElement.textContent = noteNames;
+    // Limit displayed notes to prevent layout shifts
+    if (noteNames.length > 150) {
+      notesInfoElement.textContent = noteNames.substring(0, 150) + "...";
+    } else {
+      notesInfoElement.textContent = noteNames;
+    }
 
     // Update the Freepik service with current notes
     freepikService.updateNotes(noteNames.split(", "), midiNumbers);
