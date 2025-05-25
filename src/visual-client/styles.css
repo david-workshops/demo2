@@ -257,6 +257,17 @@ body {
   white-space: pre-wrap;
 }
 
+/* Specific styling for notes info to ensure exactly two lines */
+#notes-info {
+  height: calc(1.2em * 2); /* Height for exactly two lines */
+  line-height: 1.2em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-y: auto;
+  white-space: normal;
+}
+
 /* Status indicator colors */
 .info-value.success {
   color: #4f4;

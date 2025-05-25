@@ -627,7 +627,7 @@ playToggleButton.addEventListener("click", async () => {
     playToggleButton.textContent = "STARTING...";
     playToggleButton.classList.add("loading");
     playToggleButton.setAttribute("aria-label", "Starting piano playback");
-    
+
     initAudio();
 
     // Initialize weather before starting
@@ -643,7 +643,7 @@ playToggleButton.addEventListener("click", async () => {
           musicState.start();
           logToConsole("MIDI not available, falling back to browser audio");
         }
-        
+
         // Change button text and aria-label after starting
         setTimeout(() => {
           playToggleButton.textContent = "PAUSE";
@@ -654,7 +654,7 @@ playToggleButton.addEventListener("click", async () => {
     } else {
       musicState.start();
       logToConsole("Starting MIDI stream - Browser audio");
-      
+
       // Change button text and aria-label after starting
       setTimeout(() => {
         playToggleButton.textContent = "PAUSE";
