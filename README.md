@@ -1,8 +1,10 @@
 # Player Piano
 
-A virtual player piano application that generates minimalist counterpoint music with evolving key and scale changes. Built specifically for the Yamaha Disklavier DC6X ENPRO piano system.
+A virtual player piano application that generates minimalist counterpoint music with evolving key and scale changes. Built specifically for the [Yamaha Disklavier DC6X ENPRO](https://usa.yamaha.com/products/musical_instruments/pianos/disklavier/) piano system, though any MIDI input should work and a built in option using the browsers built-in functionality.
 
-Watch our [demo video](https://youtu.be/cjs80pxvVFM) to see the Player Piano in action.
+Watch the [demo video](https://youtu.be/cjs80pxvVFM) to see the Player Piano in action.
+
+[Code Documentation](https://david-workshops.github.io/demo2/)
 
 ## Features
 
@@ -19,14 +21,14 @@ Watch our [demo video](https://youtu.be/cjs80pxvVFM) to see the Player Piano in 
 
 ## Requirements
 
-- Node.js 16 or higher
+- Node.js 20 or higher
 - npm 7 or higher
 
 ## Installation
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/player-piano.git
+   git clone https://github.com/david-workshops/demo2 player-piano
    cd player-piano
    ```
 
