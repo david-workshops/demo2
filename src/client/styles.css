@@ -211,6 +211,23 @@ h1 {
   font-family: monospace;
 }
 
+/* Specific styling for notes playing to ensure consistent height */
+.notes-row {
+  margin-top: 10px;
+  border-top: 1px dashed var(--border-color);
+  padding-top: 10px;
+}
+
+#notes-playing {
+  height: calc(1.2em * 2); /* Height for exactly two lines */
+  line-height: 1.2em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-y: auto;
+  white-space: normal;
+}
+
 .console-output {
   background-color: var(--panel-bg);
   border: 2px solid var(--border-color);
