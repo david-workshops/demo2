@@ -271,48 +271,57 @@ function logToConsole(message: string) {
 }
 
 // Handle server-generated images
-musicState.getSocket().on("image-generated", (result: any) => {
-  if (fadeInProgress) return;
+musicState
+  .getSocket()
+  .on(
+    "image-generated",
+    (result: {
+      url: string;
+      backgroundPositionX: string;
+      backgroundPositionY: string;
+    }) => {
+      if (fadeInProgress) return;
 
-  // Start transition to new image
-  fadeInProgress = true;
+      // Start transition to new image
+      fadeInProgress = true;
 
-  // Prepare the image URL for CSS use
-  const imageUrl = result.isPlaceholder
-    ? result.imageUrl
-    : `url(${result.imageUrl})`;
+      // Prepare the image URL for CSS use
+      const imageUrl = result.isPlaceholder
+        ? result.imageUrl
+        : `url(${result.imageUrl})`;
 
-  // Update the next image container (currently hidden)
-  nextImageElement.style.backgroundImage = imageUrl;
+      // Update the next image container (currently hidden)
+      nextImageElement.style.backgroundImage = imageUrl;
 
-  // Start the fade transition
-  nextImageElement.style.opacity = "1";
-  currentImageElement.style.opacity = "0";
+      // Start the fade transition
+      nextImageElement.style.opacity = "1";
+      currentImageElement.style.opacity = "0";
 
-  // Update the prompt info
-  promptInfoElement.textContent = result.prompt;
+      // Update the prompt info
+      promptInfoElement.textContent = result.prompt;
 
-  // After transition completes, swap the layers
-  setTimeout(() => {
-    // Swap the z-index of the layers
-    const tempZIndex = currentImageElement.style.zIndex;
-    currentImageElement.style.zIndex = nextImageElement.style.zIndex;
-    nextImageElement.style.zIndex = tempZIndex;
+      // After transition completes, swap the layers
+      setTimeout(() => {
+        // Swap the z-index of the layers
+        const tempZIndex = currentImageElement.style.zIndex;
+        currentImageElement.style.zIndex = nextImageElement.style.zIndex;
+        nextImageElement.style.zIndex = tempZIndex;
 
-    // Reset opacity for next transition
-    currentImageElement.style.opacity = "1";
-    nextImageElement.style.opacity = "0";
+        // Reset opacity for next transition
+        currentImageElement.style.opacity = "1";
+        nextImageElement.style.opacity = "0";
 
-    // Copy the image to the current layer
-    currentImageElement.style.backgroundImage = imageUrl;
+        // Copy the image to the current layer
+        currentImageElement.style.backgroundImage = imageUrl;
 
-    fadeInProgress = false;
-    logToConsole("Image updated from server with fade transition");
+        fadeInProgress = false;
+        logToConsole("Image updated from server with fade transition");
 
-    // Update debug info
-    updateApiDebugInfo();
-  }, FADE_TRANSITION_DURATION);
-});
+        // Update debug info
+        updateApiDebugInfo();
+      }, FADE_TRANSITION_DURATION);
+    },
+  );
 
 // Subscribe to music state events
 musicState.subscribe((event: MusicStateEvent) => {

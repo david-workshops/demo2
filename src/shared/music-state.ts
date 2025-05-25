@@ -1,5 +1,4 @@
 import { default as io } from "socket.io-client";
-import type { Socket } from "socket.io-client";
 import { MidiEvent, Note, WeatherData } from "./types";
 
 // Event types for subscribers
