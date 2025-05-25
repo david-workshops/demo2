@@ -92,6 +92,8 @@ body {
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
+  min-width: 180px;
+  text-align: center;
 }
 
 .mode-toggle-button:hover {
@@ -103,6 +105,18 @@ body {
 .mode-toggle-button:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+/* Add specific styling for gradient mode */
+.mode-toggle-button.gradient-mode {
+  background-color: rgba(0, 0, 0, 0.7);
+  border-color: rgba(0, 204, 204, 0.8); /* cyan border for gradient mode */
+}
+
+/* Add specific styling for API mode */
+.mode-toggle-button.api-mode {
+  background-color: rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 204, 0, 0.8); /* yellow border for API mode */
 }
 
 /* Color key legend */

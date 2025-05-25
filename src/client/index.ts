@@ -5,7 +5,9 @@ import { Note, WeatherData } from "../shared/types";
 const socket = musicState.getSocket();
 
 // DOM elements
-const playToggleButton = document.getElementById("play-toggle-btn") as HTMLButtonElement;
+const playToggleButton = document.getElementById(
+  "play-toggle-btn",
+) as HTMLButtonElement;
 const outputSelect = document.getElementById(
   "output-select",
 ) as HTMLSelectElement;
@@ -611,7 +613,7 @@ socket.on("disconnect", () => {
     clearInterval(weatherUpdateInterval);
     weatherUpdateInterval = null;
   }
-  
+
   // Reset button state on disconnect
   playToggleButton.textContent = "PLAY";
   playToggleButton.setAttribute("aria-label", "Start piano playback");
@@ -641,16 +643,15 @@ playToggleButton.addEventListener("click", async () => {
       musicState.start();
       logToConsole("Starting MIDI stream - Browser audio");
     }
-    
+
     // Change button text and aria-label
     playToggleButton.textContent = "PAUSE";
     playToggleButton.setAttribute("aria-label", "Pause piano playback");
-    
   } else {
     // Button must say PAUSE, so we need to stop playback
     musicState.stop();
     logToConsole("Stopping MIDI stream");
-    
+
     // Change button text and aria-label
     playToggleButton.textContent = "PLAY";
     playToggleButton.setAttribute("aria-label", "Start piano playback");

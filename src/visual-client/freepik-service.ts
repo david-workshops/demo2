@@ -55,8 +55,14 @@ export class FreepikService {
   private socket = musicState.getSocket();
 
   constructor() {
+    // Always start in gradient mode to reduce API usage
+    this.usePlaceholder = true;
+
     // Initialize event listeners for server responses
     this.initSocketListeners();
+
+    // Let server know we're in gradient mode
+    this.socket.emit("set-use-placeholder", true);
 
     // Get initial debug info from server
     this.socket.emit("get-freepik-debug");
@@ -156,7 +162,7 @@ export class FreepikService {
           this.socket.off("image-generated", onImageGenerated);
           this.socket.off("image-error", onImageError);
           resolve(result.imageUrl);
-          
+
           // Update request stats
           this.requestStats.pendingRequest = false;
           this.requestStats.successfulRequests++;
@@ -166,7 +172,7 @@ export class FreepikService {
           this.socket.off("image-generated", onImageGenerated);
           this.socket.off("image-error", onImageError);
           reject(new Error(error));
-          
+
           // Update request stats
           this.requestStats.pendingRequest = false;
           this.requestStats.failedRequests++;

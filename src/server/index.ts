@@ -73,19 +73,23 @@ io.on("connection", (socket) => {
   socket.on("generate-image", async () => {
     try {
       console.log("Generating image from server...");
-      
-      // If in placeholder mode, generate a gradient directly without making API calls
+
+      // Always check placeholder mode before doing anything
+      // This prevents any accidental API calls when in gradient mode
       if (freepikService.getUsePlaceholder()) {
+        console.log("Using gradient mode - no API call needed");
         const gradient = freepikService.generateGradient();
         const prompt = freepikService.getLastPrompt();
         socket.emit("image-generated", {
           imageUrl: gradient,
           isPlaceholder: true,
-          prompt: prompt
+          prompt: prompt,
         });
         return;
       }
-      
+
+      // Only reaches this point if explicitly NOT in placeholder mode
+      console.log("Using Freepik API mode - making external API request");
       const result = await freepikService.generateImage();
       socket.emit("image-generated", result);
     } catch (error) {
@@ -103,7 +107,7 @@ io.on("connection", (socket) => {
     socket.emit("image-generated", {
       imageUrl: gradient,
       isPlaceholder: true,
-      prompt: prompt
+      prompt: prompt,
     });
   });
 
@@ -113,18 +117,22 @@ io.on("connection", (socket) => {
       clearInterval(freepikIntervalId);
     }
 
-    // Generate first image immediately
+    // Generate first image immediately - always check mode first
     if (freepikService.getUsePlaceholder()) {
-      // If in placeholder mode, generate a gradient without API call
+      console.log(
+        "Periodic generation starting in gradient mode - no API calls",
+      );
+      // In placeholder mode, always generate gradients without API calls
       const gradient = freepikService.generateGradient();
       const prompt = freepikService.getLastPrompt();
       socket.emit("image-generated", {
         imageUrl: gradient,
         isPlaceholder: true,
-        prompt: prompt
+        prompt: prompt,
       });
     } else {
-      // Use API for image generation
+      console.log("Periodic generation starting in Freepik API mode");
+      // Only use API when explicitly in API mode
       freepikService
         .generateImage()
         .then((result) => socket.emit("image-generated", result))
@@ -138,17 +146,18 @@ io.on("connection", (socket) => {
     // Set up interval for future generations
     freepikIntervalId = setInterval(async () => {
       try {
+        // Always check current mode before each interval
         if (freepikService.getUsePlaceholder()) {
-          // If in placeholder mode, generate a gradient without API call
+          // Generate gradient without API call
           const gradient = freepikService.generateGradient();
           const prompt = freepikService.getLastPrompt();
           socket.emit("image-generated", {
             imageUrl: gradient,
             isPlaceholder: true,
-            prompt: prompt
+            prompt: prompt,
           });
         } else {
-          // Use API for image generation
+          // Only use API when explicitly in API mode
           const result = await freepikService.generateImage();
           socket.emit("image-generated", result);
         }

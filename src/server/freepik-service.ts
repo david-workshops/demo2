@@ -90,13 +90,16 @@ export class FreepikService {
   };
 
   constructor() {
-    // Only use real API if we have a valid key
-    this.usePlaceholder = !this.apiKey || this.apiKey.trim() === "";
+    // Always start in placeholder mode regardless of API key availability
+    // This ensures we don't make API calls unless explicitly requested
+    this.usePlaceholder = true;
 
-    if (this.usePlaceholder) {
-      console.log("No Freepik API key found, using placeholder gradients");
+    console.log("Starting in gradient mode for reduced network usage");
+
+    if (!this.apiKey || this.apiKey.trim() === "") {
+      console.log("No Freepik API key found - API mode will not be available");
     } else {
-      console.log("Freepik API key configured");
+      console.log("Freepik API key configured - API mode available on demand");
     }
   }
 
@@ -120,7 +123,7 @@ export class FreepikService {
   public setUsePlaceholder(value: boolean) {
     this.usePlaceholder = value;
   }
-  
+
   // Generate a CSS gradient directly without attempting an API call
   public generateGradient(): string {
     const prompt = this.generatePrompt();

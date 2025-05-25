@@ -214,15 +214,27 @@ function toggleFullscreen() {
 // Toggle between gradient and Freepik API mode
 function toggleVisualizationMode() {
   const isPlaceholder = freepikService.togglePlaceholderMode();
+
+  // Update button to clearly show which mode is active
   if (isPlaceholder) {
-    modeToggleButton.querySelector("span")!.textContent = "Gradient Mode";
+    modeToggleButton.innerHTML = "<span>Switch to API Images</span>";
+    modeToggleButton.classList.remove("api-mode");
+    modeToggleButton.classList.add("gradient-mode");
     colorKey.style.display = "flex"; // Show color key in gradient mode
-    colorKey.classList.add("visible");
-    logToConsole("Switched to gradient mode");
+    logToConsole("Switched to gradient mode (lower bandwidth)");
   } else {
-    modeToggleButton.querySelector("span")!.textContent = "Freepik API Mode";
+    modeToggleButton.innerHTML = "<span>Switch to Gradients</span>";
+    modeToggleButton.classList.remove("gradient-mode");
+    modeToggleButton.classList.add("api-mode");
     colorKey.style.display = "none"; // Hide color key in API mode
     logToConsole("Switched to Freepik API mode");
+  }
+
+  // Make the color key visible when in gradient mode
+  if (isPlaceholder) {
+    colorKey.classList.add("visible");
+  } else {
+    colorKey.classList.remove("visible");
   }
 
   // Force a new image generation to reflect the mode change
@@ -372,14 +384,11 @@ updateWeatherInfo();
 updateApiDebugInfo();
 
 // Set initial visualization mode state
-if (freepikService.getUsePlaceholder()) {
-  colorKey.style.display = "flex"; // Show color key for gradient mode
-  // Initial state will be hidden until mouse movement
-  colorKey.classList.remove("visible");
-} else {
-  colorKey.style.display = "none";
-  modeToggleButton.querySelector("span")!.textContent = "Freepik API Mode";
-}
+modeToggleButton.innerHTML = "<span>Switch to API Images</span>";
+modeToggleButton.classList.add("gradient-mode");
+colorKey.style.display = "flex"; // Always start with color key visible
+// Initial state will be hidden until mouse movement
+colorKey.classList.remove("visible");
 
 // Make sure controls container has proper initial state
 document.querySelector(".controls-container")?.classList.remove("visible");
