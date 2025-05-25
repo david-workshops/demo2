@@ -43,7 +43,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  flex: 1;
 }
 
 header {
@@ -213,16 +212,17 @@ h1 {
 
 /* Specific styling for notes playing to ensure consistent height */
 .notes-row {
-  margin-top: 10px;
-  border-top: 1px dashed var(--border-color);
-  padding-top: 10px;
+}
+
+.notes-label {
+  width: 120px;
 }
 
 #notes-playing {
-  height: calc(1.2em * 2); /* Height for exactly two lines */
+  height: calc(1.2em * 3); /* Height for exactly two lines */
   line-height: 1.2em;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow-y: auto;
   white-space: normal;
