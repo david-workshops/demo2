@@ -1,8 +1,15 @@
 import { WeatherData } from "../shared/types";
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
+import { exec } from "child_process";
+import { promisify } from "util";
 
 // Load environment variables
 dotenv.config();
+
+// Promisify exec for async/await usage
+const execAsync = promisify(exec);
 
 // Interfaces for the Freepik API
 interface FreepikImageGenerationRequest {
@@ -80,6 +87,7 @@ export class FreepikService {
   };
   private weatherData: WeatherData | null = null;
   private usePlaceholder = true;
+  private firstImageGenerated = false;
   private requestStats = {
     totalRequests: 0,
     successfulRequests: 0,
@@ -121,7 +129,12 @@ export class FreepikService {
 
   // Set use placeholder mode
   public setUsePlaceholder(value: boolean) {
+    const wasPlaceholder = this.usePlaceholder;
     this.usePlaceholder = value;
+    
+    // Return whether we switched from placeholder to API mode
+    // This will be useful for triggering immediate image generation
+    return wasPlaceholder && !value;
   }
 
   // Generate a CSS gradient directly without attempting an API call
@@ -223,7 +236,70 @@ export class FreepikService {
       activeNotes: { ...this.activeNotes },
       weatherData: this.weatherData,
       lastPrompt: this.lastPrompt,
+      firstImageGenerated: this.firstImageGenerated,
     };
+  }
+
+  // Get current git branch name
+  private async getCurrentGitBranch(): Promise<string> {
+    try {
+      const { stdout } = await execAsync('git branch --show-current');
+      return stdout.trim();
+    } catch (error) {
+      console.error('Error getting git branch name:', error);
+      return 'unknown-branch';
+    }
+  }
+
+  // Ensure the cache directory exists
+  private async ensureCacheDirectory(branchName: string): Promise<string> {
+    const cacheDir = path.join(process.cwd(), 'cached-images', branchName);
+    
+    try {
+      // Create the directory if it doesn't exist (recursive)
+      if (!fs.existsSync(cacheDir)) {
+        fs.mkdirSync(cacheDir, { recursive: true });
+        console.log(`Created cache directory: ${cacheDir}`);
+      }
+      return cacheDir;
+    } catch (error) {
+      console.error('Error creating cache directory:', error);
+      throw error;
+    }
+  }
+
+  // Save image to disk
+  private async saveImageToDisk(imageUrl: string): Promise<void> {
+    if (!imageUrl.startsWith('http')) {
+      // Skip saving CSS gradients
+      return;
+    }
+    
+    try {
+      const branchName = await this.getCurrentGitBranch();
+      const cacheDir = await this.ensureCacheDirectory(branchName);
+      
+      // Generate a unique filename based on timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = path.join(cacheDir, `image-${timestamp}.jpg`);
+      
+      // Fetch the image
+      const response = await fetch(imageUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      }
+      
+      // Get image as buffer
+      const imageBuffer = Buffer.from(await response.arrayBuffer());
+      
+      // Save to disk
+      fs.writeFileSync(filename, imageBuffer);
+      console.log(`Saved image to ${filename}`);
+    } catch (error) {
+      console.error('Error saving image:', error);
+      // Don't throw here - we don't want to fail the main flow if saving fails
+    }
   }
 
   // Generate an image using the Freepik API
@@ -257,7 +333,7 @@ export class FreepikService {
       // Create request body according to Freepik API documentation
       const requestBody: FreepikImageGenerationRequest = {
         prompt: prompt,
-        resolution: "4k", // Using 4k resolution for higher quality images
+        resolution: this.firstImageGenerated ? "2k" : "1k", // Use 1k for first image, then 2k
         aspect_ratio: "square_1_1", // Default aspect ratio
         realism: true, // Default value
         creative_detailing: 33, // Default value
@@ -297,7 +373,7 @@ export class FreepikService {
         }
       }
 
-      console.log("Requesting image generation from Freepik API...");
+      console.log(`Requesting image generation from Freepik API with resolution: ${requestBody.resolution}...`);
 
       // Step 1: Create the task
       const taskResponse = await this.createImageTask(requestBody);
@@ -307,6 +383,12 @@ export class FreepikService {
 
       this.requestStats.successfulRequests++;
       this.requestStats.pendingRequest = false;
+      
+      // Mark that we've generated at least one image
+      this.firstImageGenerated = true;
+      
+      // Save the image to the cache folder
+      await this.saveImageToDisk(imageUrl);
 
       return {
         imageUrl,
