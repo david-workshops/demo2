@@ -370,13 +370,13 @@ handleMouseActivity();
 // Add event listener for mode toggle button
 modeToggleButton.addEventListener("click", toggleVisualizationMode);
 
-// Add event listener for keyboard events (? key for debug overlay, F for fullscreen, G for gradient/Freepik mode)
+// Add event listener for keyboard events (? or ESC for debug overlay, F for fullscreen, V for gradient/Freepik mode)
 document.addEventListener("keydown", (event) => {
-  if (event.key === "?") {
+  if (event.key === "?" || event.key === "Escape") {
     toggleDebugOverlay();
   } else if (event.key === "f" || event.key === "F") {
     toggleFullscreen();
-  } else if (event.key === "g" || event.key === "G") {
+  } else if (event.key === "v" || event.key === "V") {
     toggleVisualizationMode();
   }
 });

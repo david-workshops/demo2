@@ -33,6 +33,10 @@
           <option value="midi">MIDI OUTPUT</option>
         </select>
       </div>
+
+      <div class="control-group">
+        <a href="/visual" class="visualizer-link" title="Open Visualizer">VISUALIZER</a>
+      </div>
     </div>
 
     <div class="info-panel" aria-live="polite">
@@ -63,6 +67,20 @@
     </div>
 
     <div id="console-output" class="console-output" aria-live="polite"></div>
+    
+    <div id="keyboard-shortcuts" class="keyboard-shortcuts hidden">
+      <div class="shortcuts-content">
+        <h3>Keyboard Shortcuts</h3>
+        <div class="shortcut-row">
+          <span class="shortcut-key">L</span>
+          <span class="shortcut-desc">Toggle logs display</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-key">?</span>
+          <span class="shortcut-desc">Show/hide keyboard shortcuts</span>
+        </div>
+      </div>
+    </div>
   </div>
   
   <script type="module" src="index.ts"></script>

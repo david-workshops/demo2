@@ -697,6 +697,30 @@ window.addEventListener("beforeunload", () => {
 logToConsole("Player Piano initialized");
 logToConsole("Click PLAY to begin playing");
 
+// Add keyboard shortcut functionality
+const keyboardShortcutsPanel = document.getElementById("keyboard-shortcuts") as HTMLElement;
+
+// Toggle logs visibility
+function toggleLogs() {
+  const consoleOutput = document.getElementById("console-output") as HTMLElement;
+  consoleOutput.classList.toggle("expanded");
+  logToConsole("Logs visibility toggled");
+}
+
+// Toggle keyboard shortcuts panel
+function toggleKeyboardShortcuts() {
+  keyboardShortcutsPanel.classList.toggle("hidden");
+}
+
+// Add keyboard event listeners
+document.addEventListener("keydown", (event) => {
+  if (event.key === "l" || event.key === "L") {
+    toggleLogs();
+  } else if (event.key === "?") {
+    toggleKeyboardShortcuts();
+  }
+});
+
 // Check for any existing weather data at startup (especially for Edge browser)
 setTimeout(() => {
   const existingWeather = musicState.getWeatherData();
