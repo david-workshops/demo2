@@ -209,6 +209,9 @@ function updateWeatherDisplay(weather: WeatherData) {
 function updateWeatherImpactDisplay(weather: WeatherData) {
   const impact = [];
 
+  // Christmas carol base info
+  impact.push("Christmas carol base");
+
   // Temperature impact
   if (weather.temperature < 0) {
     impact.push("Slower tempo, lower register");
