@@ -698,11 +698,15 @@ logToConsole("Player Piano initialized");
 logToConsole("Click PLAY to begin playing");
 
 // Add keyboard shortcut functionality
-const keyboardShortcutsPanel = document.getElementById("keyboard-shortcuts") as HTMLElement;
+const keyboardShortcutsPanel = document.getElementById(
+  "keyboard-shortcuts",
+) as HTMLElement;
 
 // Toggle logs visibility
 function toggleLogs() {
-  const consoleOutput = document.getElementById("console-output") as HTMLElement;
+  const consoleOutput = document.getElementById(
+    "console-output",
+  ) as HTMLElement;
   consoleOutput.classList.toggle("expanded");
   logToConsole("Logs visibility toggled");
 }
