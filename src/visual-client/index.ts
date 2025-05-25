@@ -271,7 +271,7 @@ function logToConsole(message: string) {
 }
 
 // Handle server-generated images
-musicState.getSocket().on("image-generated", (result) => {
+musicState.getSocket().on("image-generated", (result: any) => {
   if (fadeInProgress) return;
 
   // Start transition to new image
