@@ -131,6 +131,14 @@ io.on("connection", (socket) => {
     socket.emit("freepik-debug", debugInfo);
   });
 
+  // Toggle placeholder mode
+  socket.on("set-use-placeholder", (value: boolean) => {
+    console.log(`Setting placeholder mode to: ${value ? "ON" : "OFF"}`);
+    freepikService.setUsePlaceholder(value);
+    // Send updated debug info
+    socket.emit("freepik-debug", freepikService.getDebugInfo());
+  });
+
   // Stop streaming MIDI events
   socket.on("stop", () => {
     if (playing && intervalId) {

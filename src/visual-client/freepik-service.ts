@@ -190,4 +190,22 @@ export class FreepikService {
   public stopPeriodicGeneration() {
     this.socket.emit("stop-image-generation");
   }
+
+  // Set visualization mode to use placeholders (gradients) or API images
+  public setUsePlaceholder(value: boolean) {
+    this.usePlaceholder = value;
+    this.socket.emit("set-use-placeholder", value);
+  }
+
+  // Get current placeholder usage status
+  public getUsePlaceholder(): boolean {
+    return this.usePlaceholder;
+  }
+
+  // Toggle between placeholder and API mode
+  public togglePlaceholderMode(): boolean {
+    this.usePlaceholder = !this.usePlaceholder;
+    this.socket.emit("set-use-placeholder", this.usePlaceholder);
+    return this.usePlaceholder;
+  }
 }

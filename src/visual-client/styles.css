@@ -64,6 +64,92 @@ body {
   opacity: 1;
 }
 
+/* Controls container for mode toggle */
+.controls-container {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* Mode toggle button */
+.mode-toggle-button {
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0.7;
+}
+
+.mode-toggle-button:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+  border-color: rgba(255, 255, 255, 0.9);
+  opacity: 1;
+}
+
+.mode-toggle-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+/* Color key legend */
+.color-key {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+  padding: 10px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.color-key:hover {
+  opacity: 1;
+}
+
+.key-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.key-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.key-color.high {
+  background-color: #ffff00; /* bright yellow for high notes */
+}
+
+.key-color.mid {
+  background-color: #00cccc; /* cyan for mid notes */
+}
+
+.key-color.low {
+  background-color: #003366; /* deep blue for low notes */
+}
+
+.key-label {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 400;
+}
+
 #current-image {
   z-index: 2;
 }

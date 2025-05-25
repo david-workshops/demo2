@@ -116,6 +116,11 @@ export class FreepikService {
     this.weatherData = weather;
   }
 
+  // Set use placeholder mode
+  public setUsePlaceholder(value: boolean) {
+    this.usePlaceholder = value;
+  }
+
   // Generate a prompt based on current music and weather
   public generatePrompt(): string {
     // Start with a base prompt for a minimalist abstract sea of color

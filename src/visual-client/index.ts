@@ -18,6 +18,10 @@ const debugOverlay = document.getElementById("debug-overlay") as HTMLDivElement;
 const fullscreenButton = document.getElementById(
   "fullscreen-btn",
 ) as HTMLButtonElement;
+const modeToggleButton = document.getElementById(
+  "mode-toggle-btn",
+) as HTMLButtonElement;
+const colorKey = document.getElementById("color-key") as HTMLDivElement;
 
 // API debug elements
 const apiConfiguredElement = document.getElementById(
@@ -207,6 +211,24 @@ function toggleFullscreen() {
   }
 }
 
+// Toggle between gradient and Freepik API mode
+function toggleVisualizationMode() {
+  const isPlaceholder = freepikService.togglePlaceholderMode();
+  if (isPlaceholder) {
+    modeToggleButton.querySelector("span")!.textContent = "Gradient Mode";
+    colorKey.style.display = "flex"; // Show color key in gradient mode
+    logToConsole("Switched to gradient mode");
+  } else {
+    modeToggleButton.querySelector("span")!.textContent = "Freepik API Mode";
+    colorKey.style.display = "none"; // Hide color key in API mode
+    logToConsole("Switched to Freepik API mode");
+  }
+
+  // Force a new image generation to reflect the mode change
+  freepikService.stopPeriodicGeneration();
+  freepikService.startPeriodicGeneration(IMAGE_UPDATE_INTERVAL);
+}
+
 // Show fullscreen button on mouse activity
 function handleMouseActivity() {
   // Show the button
@@ -324,6 +346,9 @@ document
   .querySelector(".fullscreen-container")
   ?.addEventListener("mousemove", handleMouseActivity);
 
+// Add event listener for mode toggle button
+modeToggleButton.addEventListener("click", toggleVisualizationMode);
+
 // Add event listener for keyboard events (? key for debug overlay, F for fullscreen)
 document.addEventListener("keydown", (event) => {
   if (event.key === "?") {
@@ -337,6 +362,14 @@ document.addEventListener("keydown", (event) => {
 updateNotesInfo();
 updateWeatherInfo();
 updateApiDebugInfo();
+
+// Set initial visualization mode state
+if (freepikService.getUsePlaceholder()) {
+  colorKey.style.display = "flex"; // Show color key for gradient mode
+} else {
+  colorKey.style.display = "none";
+  modeToggleButton.querySelector("span")!.textContent = "Freepik API Mode";
+}
 
 // Initialization message
 logToConsole("Piano Visualizer initialized");
