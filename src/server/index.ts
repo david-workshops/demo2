@@ -76,7 +76,7 @@ io.on("connection", (socket) => {
 
       // Check if there's already a pending request
       const debugInfo = freepikService.getDebugInfo();
-      if (debugInfo.requestStats.pendingRequest) {
+      if ((debugInfo.requestStats as any).pendingRequest) {
         console.log("Previous image generation still in progress, skipping this request");
         socket.emit("image-error", {
           error: "A previous image generation is still in progress. Please wait for it to complete.",
@@ -142,9 +142,11 @@ io.on("connection", (socket) => {
       });
     } else {
       console.log("Periodic generation starting in Freepik API mode");
-      // Only use API when explicitly in API mode and no pending request
+      // Check if there's a pending request
       const debugInfo = freepikService.getDebugInfo();
-      if (!debugInfo.requestStats.pendingRequest) {
+      if ((debugInfo.requestStats as any).pendingRequest) {
+        console.log("Previous image generation still in progress, skipping immediate generation");
+      } else {
         freepikService
           .generateImage()
           .then((result) => socket.emit("image-generated", result))
@@ -153,8 +155,6 @@ io.on("connection", (socket) => {
               error: error instanceof Error ? error.message : String(error),
             }),
           );
-      } else {
-        console.log("Previous image generation still in progress, skipping immediate generation");
       }
     }
 
@@ -163,7 +163,7 @@ io.on("connection", (socket) => {
       try {
         // Check if there's a pending request - if so, skip this iteration
         const debugInfo = freepikService.getDebugInfo();
-        if (debugInfo.requestStats.pendingRequest) {
+        if ((debugInfo.requestStats as any).pendingRequest) {
           console.log("Previous image generation still in progress, skipping this interval");
           return;
         }
@@ -219,7 +219,8 @@ io.on("connection", (socket) => {
     if (switchedToApiMode) {
       console.log("Switched to API mode - immediately generating first image");
       // Only generate if there's no pending request
-      if (!freepikService.getDebugInfo().requestStats.pendingRequest) {
+      const debugInfo = freepikService.getDebugInfo();
+      if (!(debugInfo.requestStats as any).pendingRequest) {
         freepikService
           .generateImage()
           .then((result) => socket.emit("image-generated", result))

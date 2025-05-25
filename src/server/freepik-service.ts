@@ -243,17 +243,17 @@ export class FreepikService {
   // Get current git branch name
   private async getCurrentGitBranch(): Promise<string> {
     try {
-      const { stdout } = await execAsync('git branch --show-current');
+      const { stdout } = await execAsync("git branch --show-current");
       return stdout.trim();
     } catch (error) {
-      console.error('Error getting git branch name:', error);
-      return 'unknown-branch';
+      console.error("Error getting git branch name:", error);
+      return "unknown-branch";
     }
   }
 
   // Ensure the cache directory exists
   private async ensureCacheDirectory(branchName: string): Promise<string> {
-    const cacheDir = path.join(process.cwd(), 'cached-images', branchName);
+    const cacheDir = path.join(process.cwd(), "cached-images", branchName);
     
     try {
       // Create the directory if it doesn't exist (recursive)
@@ -263,14 +263,14 @@ export class FreepikService {
       }
       return cacheDir;
     } catch (error) {
-      console.error('Error creating cache directory:', error);
+      console.error("Error creating cache directory:", error);
       throw error;
     }
   }
 
   // Save image to disk
   private async saveImageToDisk(imageUrl: string): Promise<void> {
-    if (!imageUrl.startsWith('http')) {
+    if (!imageUrl.startsWith("http")) {
       // Skip saving CSS gradients
       return;
     }
@@ -280,14 +280,16 @@ export class FreepikService {
       const cacheDir = await this.ensureCacheDirectory(branchName);
       
       // Generate a unique filename based on timestamp
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const filename = path.join(cacheDir, `image-${timestamp}.jpg`);
       
       // Fetch the image
       const response = await fetch(imageUrl);
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Failed to fetch image: ${response.status} ${response.statusText}`
+        );
       }
       
       // Get image as buffer
@@ -297,7 +299,7 @@ export class FreepikService {
       fs.writeFileSync(filename, imageBuffer);
       console.log(`Saved image to ${filename}`);
     } catch (error) {
-      console.error('Error saving image:', error);
+      console.error("Error saving image:", error);
       // Don't throw here - we don't want to fail the main flow if saving fails
     }
   }
