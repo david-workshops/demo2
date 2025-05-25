@@ -276,9 +276,11 @@ musicState
   .on(
     "image-generated",
     (result: {
-      url: string;
-      backgroundPositionX: string;
-      backgroundPositionY: string;
+      imageUrl: string;
+      isPlaceholder: boolean;
+      prompt: string;
+      backgroundPositionX?: string;
+      backgroundPositionY?: string;
     }) => {
       if (fadeInProgress) return;
 
