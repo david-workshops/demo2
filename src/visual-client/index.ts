@@ -18,6 +18,10 @@ const debugOverlay = document.getElementById("debug-overlay") as HTMLDivElement;
 const fullscreenButton = document.getElementById(
   "fullscreen-btn",
 ) as HTMLButtonElement;
+const modeToggleButton = document.getElementById(
+  "mode-toggle-btn",
+) as HTMLButtonElement;
+const colorKey = document.getElementById("color-key") as HTMLDivElement;
 
 // API debug elements
 const apiConfiguredElement = document.getElementById(
@@ -151,6 +155,7 @@ function updateNotesInfo() {
       .join(", ");
     const midiNumbers = notesPlaying.map((n) => n.midiNumber);
 
+    // Always set the content, the CSS will handle ensuring it's two lines
     notesInfoElement.textContent = noteNames;
 
     // Update the Freepik service with current notes
@@ -207,10 +212,43 @@ function toggleFullscreen() {
   }
 }
 
+// Toggle between gradient and Freepik API mode
+function toggleVisualizationMode() {
+  const isPlaceholder = freepikService.togglePlaceholderMode();
+
+  // Update button to clearly show which mode is active
+  if (isPlaceholder) {
+    modeToggleButton.innerHTML = "<span>Switch to API Images</span>";
+    modeToggleButton.classList.remove("api-mode");
+    modeToggleButton.classList.add("gradient-mode");
+    colorKey.style.display = "flex"; // Show color key in gradient mode
+    logToConsole("Switched to gradient mode (lower bandwidth)");
+  } else {
+    modeToggleButton.innerHTML = "<span>Switch to Gradients</span>";
+    modeToggleButton.classList.remove("gradient-mode");
+    modeToggleButton.classList.add("api-mode");
+    colorKey.style.display = "none"; // Hide color key in API mode
+    logToConsole("Switched to Freepik API mode");
+  }
+
+  // Make the color key visible when in gradient mode
+  if (isPlaceholder) {
+    colorKey.classList.add("visible");
+  } else {
+    colorKey.classList.remove("visible");
+  }
+
+  // Force a new image generation to reflect the mode change
+  freepikService.stopPeriodicGeneration();
+  freepikService.startPeriodicGeneration(IMAGE_UPDATE_INTERVAL);
+}
+
 // Show fullscreen button on mouse activity
 function handleMouseActivity() {
-  // Show the button
+  // Show all UI elements
   fullscreenButton.classList.add("visible");
+  document.querySelector(".controls-container")?.classList.add("visible");
+  colorKey.classList.add("visible");
 
   // Clear existing timeout
   if (mouseActivityTimeout !== null) {
@@ -220,6 +258,8 @@ function handleMouseActivity() {
   // Set new timeout to hide the button after inactivity
   mouseActivityTimeout = window.setTimeout(() => {
     fullscreenButton.classList.remove("visible");
+    document.querySelector(".controls-container")?.classList.remove("visible");
+    colorKey.classList.remove("visible");
   }, MOUSE_ACTIVITY_TIMEOUT);
 }
 
@@ -231,48 +271,59 @@ function logToConsole(message: string) {
 }
 
 // Handle server-generated images
-musicState.getSocket().on("image-generated", (result) => {
-  if (fadeInProgress) return;
+musicState
+  .getSocket()
+  .on(
+    "image-generated",
+    (result: {
+      imageUrl: string;
+      isPlaceholder: boolean;
+      prompt: string;
+      backgroundPositionX?: string;
+      backgroundPositionY?: string;
+    }) => {
+      if (fadeInProgress) return;
 
-  // Start transition to new image
-  fadeInProgress = true;
+      // Start transition to new image
+      fadeInProgress = true;
 
-  // Prepare the image URL for CSS use
-  const imageUrl = result.isPlaceholder
-    ? result.imageUrl
-    : `url(${result.imageUrl})`;
+      // Prepare the image URL for CSS use
+      const imageUrl = result.isPlaceholder
+        ? result.imageUrl
+        : `url(${result.imageUrl})`;
 
-  // Update the next image container (currently hidden)
-  nextImageElement.style.backgroundImage = imageUrl;
+      // Update the next image container (currently hidden)
+      nextImageElement.style.backgroundImage = imageUrl;
 
-  // Start the fade transition
-  nextImageElement.style.opacity = "1";
-  currentImageElement.style.opacity = "0";
+      // Start the fade transition
+      nextImageElement.style.opacity = "1";
+      currentImageElement.style.opacity = "0";
 
-  // Update the prompt info
-  promptInfoElement.textContent = result.prompt;
+      // Update the prompt info
+      promptInfoElement.textContent = result.prompt;
 
-  // After transition completes, swap the layers
-  setTimeout(() => {
-    // Swap the z-index of the layers
-    const tempZIndex = currentImageElement.style.zIndex;
-    currentImageElement.style.zIndex = nextImageElement.style.zIndex;
-    nextImageElement.style.zIndex = tempZIndex;
+      // After transition completes, swap the layers
+      setTimeout(() => {
+        // Swap the z-index of the layers
+        const tempZIndex = currentImageElement.style.zIndex;
+        currentImageElement.style.zIndex = nextImageElement.style.zIndex;
+        nextImageElement.style.zIndex = tempZIndex;
 
-    // Reset opacity for next transition
-    currentImageElement.style.opacity = "1";
-    nextImageElement.style.opacity = "0";
+        // Reset opacity for next transition
+        currentImageElement.style.opacity = "1";
+        nextImageElement.style.opacity = "0";
 
-    // Copy the image to the current layer
-    currentImageElement.style.backgroundImage = imageUrl;
+        // Copy the image to the current layer
+        currentImageElement.style.backgroundImage = imageUrl;
 
-    fadeInProgress = false;
-    logToConsole("Image updated from server with fade transition");
+        fadeInProgress = false;
+        logToConsole("Image updated from server with fade transition");
 
-    // Update debug info
-    updateApiDebugInfo();
-  }, FADE_TRANSITION_DURATION);
-});
+        // Update debug info
+        updateApiDebugInfo();
+      }, FADE_TRANSITION_DURATION);
+    },
+  );
 
 // Subscribe to music state events
 musicState.subscribe((event: MusicStateEvent) => {
@@ -324,12 +375,20 @@ document
   .querySelector(".fullscreen-container")
   ?.addEventListener("mousemove", handleMouseActivity);
 
-// Add event listener for keyboard events (? key for debug overlay, F for fullscreen)
+// Initially trigger mouse activity to show controls briefly on page load
+handleMouseActivity();
+
+// Add event listener for mode toggle button
+modeToggleButton.addEventListener("click", toggleVisualizationMode);
+
+// Add event listener for keyboard events (? or ESC for debug overlay, F for fullscreen, V for gradient/Freepik mode)
 document.addEventListener("keydown", (event) => {
-  if (event.key === "?") {
+  if (event.key === "?" || event.key === "Escape") {
     toggleDebugOverlay();
   } else if (event.key === "f" || event.key === "F") {
     toggleFullscreen();
+  } else if (event.key === "v" || event.key === "V") {
+    toggleVisualizationMode();
   }
 });
 
@@ -337,6 +396,16 @@ document.addEventListener("keydown", (event) => {
 updateNotesInfo();
 updateWeatherInfo();
 updateApiDebugInfo();
+
+// Set initial visualization mode state
+modeToggleButton.innerHTML = "<span>Switch to API Images</span>";
+modeToggleButton.classList.add("gradient-mode");
+colorKey.style.display = "flex"; // Always start with color key visible
+// Initial state will be hidden until mouse movement
+colorKey.classList.remove("visible");
+
+// Make sure controls container has proper initial state
+document.querySelector(".controls-container")?.classList.remove("visible");
 
 // Initialization message
 logToConsole("Piano Visualizer initialized");

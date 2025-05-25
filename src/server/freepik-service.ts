@@ -90,13 +90,16 @@ export class FreepikService {
   };
 
   constructor() {
-    // Only use real API if we have a valid key
-    this.usePlaceholder = !this.apiKey || this.apiKey.trim() === "";
+    // Always start in placeholder mode regardless of API key availability
+    // This ensures we don't make API calls unless explicitly requested
+    this.usePlaceholder = true;
 
-    if (this.usePlaceholder) {
-      console.log("No Freepik API key found, using placeholder gradients");
+    console.log("Starting in gradient mode for reduced network usage");
+
+    if (!this.apiKey || this.apiKey.trim() === "") {
+      console.log("No Freepik API key found - API mode will not be available");
     } else {
-      console.log("Freepik API key configured");
+      console.log("Freepik API key configured - API mode available on demand");
     }
   }
 
@@ -114,6 +117,23 @@ export class FreepikService {
   // Update the weather data
   public updateWeather(weather: WeatherData) {
     this.weatherData = weather;
+  }
+
+  // Set use placeholder mode
+  public setUsePlaceholder(value: boolean) {
+    this.usePlaceholder = value;
+  }
+
+  // Generate a CSS gradient directly without attempting an API call
+  public generateGradient(): string {
+    const prompt = this.generatePrompt();
+    const colors = this.getColorsFromPrompt(prompt);
+    return this.generatePlaceholderImage(colors);
+  }
+
+  // Get the placeholder mode status
+  public getUsePlaceholder(): boolean {
+    return this.usePlaceholder;
   }
 
   // Generate a prompt based on current music and weather
@@ -237,7 +257,7 @@ export class FreepikService {
       // Create request body according to Freepik API documentation
       const requestBody: FreepikImageGenerationRequest = {
         prompt: prompt,
-        resolution: "2k", // Default resolution
+        resolution: "4k", // Using 4k resolution for higher quality images
         aspect_ratio: "square_1_1", // Default aspect ratio
         realism: true, // Default value
         creative_detailing: 33, // Default value

@@ -6,6 +6,7 @@
   <title>Player Piano</title>
   <link rel="stylesheet" href="styles.css">
   <meta name="description" content="A virtual player piano with generated minimalist music">
+  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23ffffff' stroke='%23000000' stroke-width='1' d='M3 5h18v14H3V5zm1 2v10h16V7H4zm1 1h2v6H5V8zm4 0h2v6H9V8zm4 0h2v6h-2V8zm4 0h2v6h-2V8z'/></svg>">
 </head>
 <body>
   <div class="container">
@@ -22,8 +23,7 @@
 
     <div class="controls">
       <div class="control-group">
-        <button id="start-btn" class="btn" aria-label="Start piano playback">START</button>
-        <button id="stop-btn" class="btn" aria-label="Stop piano playback">STOP</button>
+        <button id="play-toggle-btn" class="btn" aria-label="Toggle piano playback">PLAY</button>
       </div>
       
       <div class="control-group">
@@ -33,25 +33,16 @@
           <option value="midi">MIDI OUTPUT</option>
         </select>
       </div>
+
+      <div class="control-group">
+        <a href="http://localhost:5174" class="visualizer-link" title="Open Visualizer" target="_blank" rel="noopener noreferrer">
+          VISUALIZER
+          <span class="sr-only">(opens in a new tab)</span>
+        </a>
+      </div>
     </div>
 
     <div class="info-panel" aria-live="polite">
-      <div class="info-row">
-        <span class="info-label">KEY:</span>
-        <span id="current-key" class="info-value">--</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">SCALE:</span>
-        <span id="current-scale" class="info-value">--</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">NOTES PLAYING:</span>
-        <span id="notes-playing" class="info-value">--</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">PEDALS:</span>
-        <span id="pedals-status" class="info-value">--</span>
-      </div>
       <div class="info-row">
         <span class="info-label">WEATHER:</span>
         <span id="weather-info" class="info-value">--</span>
@@ -60,9 +51,39 @@
         <span class="info-label">WEATHER IMPACT:</span>
         <span id="weather-impact" class="info-value">--</span>
       </div>
+      <div class="info-row">
+        <span class="info-label">KEY:</span>
+        <span id="current-key" class="info-value">--</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">SCALE:</span>
+        <span id="current-scale" class="info-value">--</span>
+      </div>
+      <div class="info-row notes-row">
+        <span class="info-label notes-label">NOTES PLAYING:</span>
+        <span id="notes-playing" class="info-value">--</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">PEDALS:</span>
+        <span id="pedals-status" class="info-value">--</span>
+      </div>
     </div>
 
     <div id="console-output" class="console-output" aria-live="polite"></div>
+    
+    <div id="keyboard-shortcuts" class="keyboard-shortcuts hidden">
+      <div class="shortcuts-content">
+        <h3>Keyboard Shortcuts</h3>
+        <div class="shortcut-row">
+          <span class="shortcut-key">L</span>
+          <span class="shortcut-desc">Toggle logs display</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-key">?</span>
+          <span class="shortcut-desc">Show/hide keyboard shortcuts</span>
+        </div>
+      </div>
+    </div>
   </div>
   
   <script type="module" src="index.ts"></script>

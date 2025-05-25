@@ -43,7 +43,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  flex: 1;
 }
 
 header {
@@ -156,6 +155,20 @@ h1 {
   background-color: var(--button-active);
 }
 
+.btn.loading {
+  animation: loading-pulse 1.2s infinite;
+  cursor: wait;
+}
+
+@keyframes loading-pulse {
+  0%, 100% {
+    background-color: var(--panel-bg);
+  }
+  50% {
+    background-color: var(--button-hover);
+  }
+}
+
 .control-label {
   font-size: 1.2rem;
 }
@@ -197,6 +210,24 @@ h1 {
   font-family: monospace;
 }
 
+/* Specific styling for notes playing to ensure consistent height */
+.notes-row {
+}
+
+.notes-label {
+  width: 120px;
+}
+
+#notes-playing {
+  height: calc(1.2em * 3); /* Height for exactly two lines */
+  line-height: 1.2em;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow-y: auto;
+  white-space: normal;
+}
+
 .console-output {
   background-color: var(--panel-bg);
   border: 2px solid var(--border-color);
@@ -208,6 +239,71 @@ h1 {
   font-size: 0.9rem;
   white-space: pre-wrap;
   width: 100%;
+  transition: height 0.3s ease;
+}
+
+.console-output.expanded {
+  height: 350px;
+}
+
+.visualizer-link {
+  display: inline-block;
+  background-color: var(--panel-bg);
+  color: var(--text-color);
+  border: 2px solid var(--border-color);
+  padding: 10px 20px;
+  font-family: var(--main-font);
+  font-size: 1.2rem;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.visualizer-link:hover {
+  background-color: var(--button-hover);
+  box-shadow: 0 0 10px rgba(51, 255, 51, 0.3);
+}
+
+.keyboard-shortcuts {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--panel-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  padding: 20px;
+  z-index: 100;
+  box-shadow: 0 0 20px rgba(51, 255, 51, 0.4);
+  min-width: 300px;
+}
+
+.keyboard-shortcuts.hidden {
+  display: none;
+}
+
+.shortcuts-content h3 {
+  margin-bottom: 15px;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 5px;
+}
+
+.shortcut-row {
+  display: flex;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.shortcut-key {
+  background-color: var(--button-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  padding: 3px 8px;
+  min-width: 30px;
+  text-align: center;
+  margin-right: 15px;
+  font-weight: bold;
 }
 
 /* Accessibility improvements */

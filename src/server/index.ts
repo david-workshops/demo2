@@ -73,6 +73,23 @@ io.on("connection", (socket) => {
   socket.on("generate-image", async () => {
     try {
       console.log("Generating image from server...");
+
+      // Always check placeholder mode before doing anything
+      // This prevents any accidental API calls when in gradient mode
+      if (freepikService.getUsePlaceholder()) {
+        console.log("Using gradient mode - no API call needed");
+        const gradient = freepikService.generateGradient();
+        const prompt = freepikService.getLastPrompt();
+        socket.emit("image-generated", {
+          imageUrl: gradient,
+          isPlaceholder: true,
+          prompt: prompt,
+        });
+        return;
+      }
+
+      // Only reaches this point if explicitly NOT in placeholder mode
+      console.log("Using Freepik API mode - making external API request");
       const result = await freepikService.generateImage();
       socket.emit("image-generated", result);
     } catch (error) {
@@ -83,27 +100,67 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Generate gradient only (without API call)
+  socket.on("generate-gradient", () => {
+    const gradient = freepikService.generateGradient();
+    const prompt = freepikService.getLastPrompt();
+    socket.emit("image-generated", {
+      imageUrl: gradient,
+      isPlaceholder: true,
+      prompt: prompt,
+    });
+  });
+
   // Start periodic image generation
   socket.on("start-image-generation", (interval = 105000) => {
     if (freepikIntervalId) {
       clearInterval(freepikIntervalId);
     }
 
-    // Generate first image immediately
-    freepikService
-      .generateImage()
-      .then((result) => socket.emit("image-generated", result))
-      .catch((error) =>
-        socket.emit("image-error", {
-          error: error instanceof Error ? error.message : String(error),
-        }),
+    // Generate first image immediately - always check mode first
+    if (freepikService.getUsePlaceholder()) {
+      console.log(
+        "Periodic generation starting in gradient mode - no API calls",
       );
+      // In placeholder mode, always generate gradients without API calls
+      const gradient = freepikService.generateGradient();
+      const prompt = freepikService.getLastPrompt();
+      socket.emit("image-generated", {
+        imageUrl: gradient,
+        isPlaceholder: true,
+        prompt: prompt,
+      });
+    } else {
+      console.log("Periodic generation starting in Freepik API mode");
+      // Only use API when explicitly in API mode
+      freepikService
+        .generateImage()
+        .then((result) => socket.emit("image-generated", result))
+        .catch((error) =>
+          socket.emit("image-error", {
+            error: error instanceof Error ? error.message : String(error),
+          }),
+        );
+    }
 
     // Set up interval for future generations
     freepikIntervalId = setInterval(async () => {
       try {
-        const result = await freepikService.generateImage();
-        socket.emit("image-generated", result);
+        // Always check current mode before each interval
+        if (freepikService.getUsePlaceholder()) {
+          // Generate gradient without API call
+          const gradient = freepikService.generateGradient();
+          const prompt = freepikService.getLastPrompt();
+          socket.emit("image-generated", {
+            imageUrl: gradient,
+            isPlaceholder: true,
+            prompt: prompt,
+          });
+        } else {
+          // Only use API when explicitly in API mode
+          const result = await freepikService.generateImage();
+          socket.emit("image-generated", result);
+        }
       } catch (error) {
         socket.emit("image-error", {
           error: error instanceof Error ? error.message : String(error),
@@ -129,6 +186,14 @@ io.on("connection", (socket) => {
   socket.on("get-freepik-debug", () => {
     const debugInfo = freepikService.getDebugInfo();
     socket.emit("freepik-debug", debugInfo);
+  });
+
+  // Toggle placeholder mode
+  socket.on("set-use-placeholder", (value: boolean) => {
+    console.log(`Setting placeholder mode to: ${value ? "ON" : "OFF"}`);
+    freepikService.setUsePlaceholder(value);
+    // Send updated debug info
+    socket.emit("freepik-debug", freepikService.getDebugInfo());
   });
 
   // Stop streaming MIDI events

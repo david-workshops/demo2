@@ -1,4 +1,4 @@
-import { io, Socket } from "socket.io-client";
+import { default as io } from "socket.io-client";
 import { MidiEvent, Note, WeatherData } from "./types";
 
 // Event types for subscribers
@@ -17,7 +17,7 @@ type SubscriberCallback = (event: MusicStateEvent) => void;
  */
 class MusicStateService {
   // Socket connection
-  private socket: Socket = io();
+  private socket = io();
 
   // State variables
   private notesPlaying: Note[] = [];
@@ -196,7 +196,7 @@ class MusicStateService {
   }
 
   // Get the socket instance directly if needed
-  public getSocket(): Socket {
+  public getSocket() {
     return this.socket;
   }
 }

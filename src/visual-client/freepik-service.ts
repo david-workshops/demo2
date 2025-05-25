@@ -55,8 +55,14 @@ export class FreepikService {
   private socket = musicState.getSocket();
 
   constructor() {
+    // Always start in gradient mode to reduce API usage
+    this.usePlaceholder = true;
+
     // Initialize event listeners for server responses
     this.initSocketListeners();
+
+    // Let server know we're in gradient mode
+    this.socket.emit("set-use-placeholder", true);
 
     // Get initial debug info from server
     this.socket.emit("get-freepik-debug");
@@ -148,6 +154,40 @@ export class FreepikService {
     this.requestStats.lastRequestTime = Date.now();
     this.requestStats.pendingRequest = true;
 
+    // If we're in placeholder mode (gradient), don't make API calls
+    if (this.usePlaceholder) {
+      // Request a gradient from the server directly
+      return new Promise((resolve, reject) => {
+        const onImageGenerated = (result: ImageGenerationResult) => {
+          this.socket.off("image-generated", onImageGenerated);
+          this.socket.off("image-error", onImageError);
+          resolve(result.imageUrl);
+
+          // Update request stats
+          this.requestStats.pendingRequest = false;
+          this.requestStats.successfulRequests++;
+        };
+
+        const onImageError = ({ error }: { error: string }) => {
+          this.socket.off("image-generated", onImageGenerated);
+          this.socket.off("image-error", onImageError);
+          reject(new Error(error));
+
+          // Update request stats
+          this.requestStats.pendingRequest = false;
+          this.requestStats.failedRequests++;
+          this.requestStats.lastError = error;
+        };
+
+        // Register the listeners
+        this.socket.once("image-generated", onImageGenerated);
+        this.socket.once("image-error", onImageError);
+
+        // Request a gradient directly
+        this.socket.emit("generate-gradient");
+      });
+    }
+
     return new Promise((resolve, reject) => {
       // Set up a one-time listener for the response
       const onImageGenerated = (result: ImageGenerationResult) => {
@@ -189,5 +229,23 @@ export class FreepikService {
   // Stop periodic image generation
   public stopPeriodicGeneration() {
     this.socket.emit("stop-image-generation");
+  }
+
+  // Set visualization mode to use placeholders (gradients) or API images
+  public setUsePlaceholder(value: boolean) {
+    this.usePlaceholder = value;
+    this.socket.emit("set-use-placeholder", value);
+  }
+
+  // Get current placeholder usage status
+  public getUsePlaceholder(): boolean {
+    return this.usePlaceholder;
+  }
+
+  // Toggle between placeholder and API mode
+  public togglePlaceholderMode(): boolean {
+    this.usePlaceholder = !this.usePlaceholder;
+    this.socket.emit("set-use-placeholder", this.usePlaceholder);
+    return this.usePlaceholder;
   }
 }

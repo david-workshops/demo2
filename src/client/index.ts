@@ -5,8 +5,9 @@ import { Note, WeatherData } from "../shared/types";
 const socket = musicState.getSocket();
 
 // DOM elements
-const startButton = document.getElementById("start-btn") as HTMLButtonElement;
-const stopButton = document.getElementById("stop-btn") as HTMLButtonElement;
+const playToggleButton = document.getElementById(
+  "play-toggle-btn",
+) as HTMLButtonElement;
 const outputSelect = document.getElementById(
   "output-select",
 ) as HTMLSelectElement;
@@ -612,35 +613,64 @@ socket.on("disconnect", () => {
     clearInterval(weatherUpdateInterval);
     weatherUpdateInterval = null;
   }
+
+  // Reset button state on disconnect
+  playToggleButton.textContent = "PLAY";
+  playToggleButton.setAttribute("aria-label", "Start piano playback");
 });
 
 // Event listeners
-startButton.addEventListener("click", async () => {
-  initAudio();
+playToggleButton.addEventListener("click", async () => {
+  // If button says PLAY, we need to start playback
+  if (playToggleButton.textContent === "PLAY") {
+    // Show loading state
+    playToggleButton.textContent = "STARTING...";
+    playToggleButton.classList.add("loading");
+    playToggleButton.setAttribute("aria-label", "Starting piano playback");
 
-  // Initialize weather before starting
-  await initWeatherUpdates();
+    initAudio();
 
-  if (outputSelect.value === "midi") {
-    initMidi().then((success) => {
-      if (success) {
-        musicState.start();
-        logToConsole("Starting MIDI stream - MIDI output");
-      } else {
-        outputSelect.value = "browser";
-        musicState.start();
-        logToConsole("MIDI not available, falling back to browser audio");
-      }
-    });
+    // Initialize weather before starting
+    await initWeatherUpdates();
+
+    if (outputSelect.value === "midi") {
+      initMidi().then((success) => {
+        if (success) {
+          musicState.start();
+          logToConsole("Starting MIDI stream - MIDI output");
+        } else {
+          outputSelect.value = "browser";
+          musicState.start();
+          logToConsole("MIDI not available, falling back to browser audio");
+        }
+
+        // Change button text and aria-label after starting
+        setTimeout(() => {
+          playToggleButton.textContent = "PAUSE";
+          playToggleButton.classList.remove("loading");
+          playToggleButton.setAttribute("aria-label", "Pause piano playback");
+        }, 500);
+      });
+    } else {
+      musicState.start();
+      logToConsole("Starting MIDI stream - Browser audio");
+
+      // Change button text and aria-label after starting
+      setTimeout(() => {
+        playToggleButton.textContent = "PAUSE";
+        playToggleButton.classList.remove("loading");
+        playToggleButton.setAttribute("aria-label", "Pause piano playback");
+      }, 500);
+    }
   } else {
-    musicState.start();
-    logToConsole("Starting MIDI stream - Browser audio");
-  }
-});
+    // Button must say PAUSE, so we need to stop playback
+    musicState.stop();
+    logToConsole("Stopping MIDI stream");
 
-stopButton.addEventListener("click", () => {
-  musicState.stop();
-  logToConsole("Stopping MIDI stream");
+    // Change button text and aria-label
+    playToggleButton.textContent = "PLAY";
+    playToggleButton.setAttribute("aria-label", "Start piano playback");
+  }
 });
 
 outputSelect.addEventListener("change", () => {
@@ -665,7 +695,35 @@ window.addEventListener("beforeunload", () => {
 
 // Initialization
 logToConsole("Player Piano initialized");
-logToConsole("Click START to begin playing");
+logToConsole("Click PLAY to begin playing");
+
+// Add keyboard shortcut functionality
+const keyboardShortcutsPanel = document.getElementById(
+  "keyboard-shortcuts",
+) as HTMLElement;
+
+// Toggle logs visibility
+function toggleLogs() {
+  const consoleOutput = document.getElementById(
+    "console-output",
+  ) as HTMLElement;
+  consoleOutput.classList.toggle("expanded");
+  logToConsole("Logs visibility toggled");
+}
+
+// Toggle keyboard shortcuts panel
+function toggleKeyboardShortcuts() {
+  keyboardShortcutsPanel.classList.toggle("hidden");
+}
+
+// Add keyboard event listeners
+document.addEventListener("keydown", (event) => {
+  if (event.key === "l" || event.key === "L") {
+    toggleLogs();
+  } else if (event.key === "?") {
+    toggleKeyboardShortcuts();
+  }
+});
 
 // Check for any existing weather data at startup (especially for Edge browser)
 setTimeout(() => {
