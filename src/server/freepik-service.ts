@@ -336,7 +336,7 @@ export class FreepikService {
       const requestBody: FreepikImageGenerationRequest = {
         prompt: prompt,
         resolution: this.firstImageGenerated ? "2k" : "1k", // Use 1k for first image, then 2k
-        aspect_ratio: "square_1_1", // Default aspect ratio
+        aspect_ratio: "widescreen_16_9", // Default aspect ratio
         realism: true, // Default value
         creative_detailing: 33, // Default value
         engine: "automatic", // Default engine
@@ -350,13 +350,6 @@ export class FreepikService {
           // Thunderstorm
           requestBody.creative_detailing = 50;
           requestBody.realism = false;
-        }
-
-        // Better aspect ratio for displaying on the visualization canvas
-        if (this.activeNotes.count > 3) {
-          requestBody.aspect_ratio = "square_1_1"; // More complex visualization
-        } else {
-          requestBody.aspect_ratio = "horizontal_2_1"; // Wider landscape for simpler scenes
         }
 
         // Choose engine based on weather
