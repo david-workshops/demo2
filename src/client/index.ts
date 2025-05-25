@@ -623,6 +623,11 @@ socket.on("disconnect", () => {
 playToggleButton.addEventListener("click", async () => {
   // If button says PLAY, we need to start playback
   if (playToggleButton.textContent === "PLAY") {
+    // Show loading state
+    playToggleButton.textContent = "STARTING...";
+    playToggleButton.classList.add("loading");
+    playToggleButton.setAttribute("aria-label", "Starting piano playback");
+    
     initAudio();
 
     // Initialize weather before starting
@@ -638,15 +643,25 @@ playToggleButton.addEventListener("click", async () => {
           musicState.start();
           logToConsole("MIDI not available, falling back to browser audio");
         }
+        
+        // Change button text and aria-label after starting
+        setTimeout(() => {
+          playToggleButton.textContent = "PAUSE";
+          playToggleButton.classList.remove("loading");
+          playToggleButton.setAttribute("aria-label", "Pause piano playback");
+        }, 500);
       });
     } else {
       musicState.start();
       logToConsole("Starting MIDI stream - Browser audio");
+      
+      // Change button text and aria-label after starting
+      setTimeout(() => {
+        playToggleButton.textContent = "PAUSE";
+        playToggleButton.classList.remove("loading");
+        playToggleButton.setAttribute("aria-label", "Pause piano playback");
+      }, 500);
     }
-
-    // Change button text and aria-label
-    playToggleButton.textContent = "PAUSE";
-    playToggleButton.setAttribute("aria-label", "Pause piano playback");
   } else {
     // Button must say PAUSE, so we need to stop playback
     musicState.stop();

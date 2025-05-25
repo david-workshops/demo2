@@ -156,6 +156,20 @@ h1 {
   background-color: var(--button-active);
 }
 
+.btn.loading {
+  animation: loading-pulse 1.2s infinite;
+  cursor: wait;
+}
+
+@keyframes loading-pulse {
+  0%, 100% {
+    background-color: var(--panel-bg);
+  }
+  50% {
+    background-color: var(--button-hover);
+  }
+}
+
 .control-label {
   font-size: 1.2rem;
 }
