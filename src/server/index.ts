@@ -73,6 +73,19 @@ io.on("connection", (socket) => {
   socket.on("generate-image", async () => {
     try {
       console.log("Generating image from server...");
+      
+      // If in placeholder mode, generate a gradient directly without making API calls
+      if (freepikService.getUsePlaceholder()) {
+        const gradient = freepikService.generateGradient();
+        const prompt = freepikService.getLastPrompt();
+        socket.emit("image-generated", {
+          imageUrl: gradient,
+          isPlaceholder: true,
+          prompt: prompt
+        });
+        return;
+      }
+      
       const result = await freepikService.generateImage();
       socket.emit("image-generated", result);
     } catch (error) {
@@ -83,6 +96,17 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Generate gradient only (without API call)
+  socket.on("generate-gradient", () => {
+    const gradient = freepikService.generateGradient();
+    const prompt = freepikService.getLastPrompt();
+    socket.emit("image-generated", {
+      imageUrl: gradient,
+      isPlaceholder: true,
+      prompt: prompt
+    });
+  });
+
   // Start periodic image generation
   socket.on("start-image-generation", (interval = 105000) => {
     if (freepikIntervalId) {
@@ -90,20 +114,44 @@ io.on("connection", (socket) => {
     }
 
     // Generate first image immediately
-    freepikService
-      .generateImage()
-      .then((result) => socket.emit("image-generated", result))
-      .catch((error) =>
-        socket.emit("image-error", {
-          error: error instanceof Error ? error.message : String(error),
-        }),
-      );
+    if (freepikService.getUsePlaceholder()) {
+      // If in placeholder mode, generate a gradient without API call
+      const gradient = freepikService.generateGradient();
+      const prompt = freepikService.getLastPrompt();
+      socket.emit("image-generated", {
+        imageUrl: gradient,
+        isPlaceholder: true,
+        prompt: prompt
+      });
+    } else {
+      // Use API for image generation
+      freepikService
+        .generateImage()
+        .then((result) => socket.emit("image-generated", result))
+        .catch((error) =>
+          socket.emit("image-error", {
+            error: error instanceof Error ? error.message : String(error),
+          }),
+        );
+    }
 
     // Set up interval for future generations
     freepikIntervalId = setInterval(async () => {
       try {
-        const result = await freepikService.generateImage();
-        socket.emit("image-generated", result);
+        if (freepikService.getUsePlaceholder()) {
+          // If in placeholder mode, generate a gradient without API call
+          const gradient = freepikService.generateGradient();
+          const prompt = freepikService.getLastPrompt();
+          socket.emit("image-generated", {
+            imageUrl: gradient,
+            isPlaceholder: true,
+            prompt: prompt
+          });
+        } else {
+          // Use API for image generation
+          const result = await freepikService.generateImage();
+          socket.emit("image-generated", result);
+        }
       } catch (error) {
         socket.emit("image-error", {
           error: error instanceof Error ? error.message : String(error),

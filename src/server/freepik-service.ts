@@ -120,6 +120,18 @@ export class FreepikService {
   public setUsePlaceholder(value: boolean) {
     this.usePlaceholder = value;
   }
+  
+  // Generate a CSS gradient directly without attempting an API call
+  public generateGradient(): string {
+    const prompt = this.generatePrompt();
+    const colors = this.getColorsFromPrompt(prompt);
+    return this.generatePlaceholderImage(colors);
+  }
+
+  // Get the placeholder mode status
+  public getUsePlaceholder(): boolean {
+    return this.usePlaceholder;
+  }
 
   // Generate a prompt based on current music and weather
   public generatePrompt(): string {

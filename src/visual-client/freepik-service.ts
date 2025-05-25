@@ -148,6 +148,40 @@ export class FreepikService {
     this.requestStats.lastRequestTime = Date.now();
     this.requestStats.pendingRequest = true;
 
+    // If we're in placeholder mode (gradient), don't make API calls
+    if (this.usePlaceholder) {
+      // Request a gradient from the server directly
+      return new Promise((resolve, reject) => {
+        const onImageGenerated = (result: ImageGenerationResult) => {
+          this.socket.off("image-generated", onImageGenerated);
+          this.socket.off("image-error", onImageError);
+          resolve(result.imageUrl);
+          
+          // Update request stats
+          this.requestStats.pendingRequest = false;
+          this.requestStats.successfulRequests++;
+        };
+
+        const onImageError = ({ error }: { error: string }) => {
+          this.socket.off("image-generated", onImageGenerated);
+          this.socket.off("image-error", onImageError);
+          reject(new Error(error));
+          
+          // Update request stats
+          this.requestStats.pendingRequest = false;
+          this.requestStats.failedRequests++;
+          this.requestStats.lastError = error;
+        };
+
+        // Register the listeners
+        this.socket.once("image-generated", onImageGenerated);
+        this.socket.once("image-error", onImageError);
+
+        // Request a gradient directly
+        this.socket.emit("generate-gradient");
+      });
+    }
+
     return new Promise((resolve, reject) => {
       // Set up a one-time listener for the response
       const onImageGenerated = (result: ImageGenerationResult) => {

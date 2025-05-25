@@ -217,6 +217,7 @@ function toggleVisualizationMode() {
   if (isPlaceholder) {
     modeToggleButton.querySelector("span")!.textContent = "Gradient Mode";
     colorKey.style.display = "flex"; // Show color key in gradient mode
+    colorKey.classList.add("visible");
     logToConsole("Switched to gradient mode");
   } else {
     modeToggleButton.querySelector("span")!.textContent = "Freepik API Mode";
@@ -231,8 +232,10 @@ function toggleVisualizationMode() {
 
 // Show fullscreen button on mouse activity
 function handleMouseActivity() {
-  // Show the button
+  // Show all UI elements
   fullscreenButton.classList.add("visible");
+  document.querySelector(".controls-container")?.classList.add("visible");
+  colorKey.classList.add("visible");
 
   // Clear existing timeout
   if (mouseActivityTimeout !== null) {
@@ -242,6 +245,8 @@ function handleMouseActivity() {
   // Set new timeout to hide the button after inactivity
   mouseActivityTimeout = window.setTimeout(() => {
     fullscreenButton.classList.remove("visible");
+    document.querySelector(".controls-container")?.classList.remove("visible");
+    colorKey.classList.remove("visible");
   }, MOUSE_ACTIVITY_TIMEOUT);
 }
 
@@ -346,6 +351,9 @@ document
   .querySelector(".fullscreen-container")
   ?.addEventListener("mousemove", handleMouseActivity);
 
+// Initially trigger mouse activity to show controls briefly on page load
+handleMouseActivity();
+
 // Add event listener for mode toggle button
 modeToggleButton.addEventListener("click", toggleVisualizationMode);
 
@@ -366,10 +374,15 @@ updateApiDebugInfo();
 // Set initial visualization mode state
 if (freepikService.getUsePlaceholder()) {
   colorKey.style.display = "flex"; // Show color key for gradient mode
+  // Initial state will be hidden until mouse movement
+  colorKey.classList.remove("visible");
 } else {
   colorKey.style.display = "none";
   modeToggleButton.querySelector("span")!.textContent = "Freepik API Mode";
 }
+
+// Make sure controls container has proper initial state
+document.querySelector(".controls-container")?.classList.remove("visible");
 
 // Initialization message
 logToConsole("Piano Visualizer initialized");

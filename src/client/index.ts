@@ -5,8 +5,7 @@ import { Note, WeatherData } from "../shared/types";
 const socket = musicState.getSocket();
 
 // DOM elements
-const startButton = document.getElementById("start-btn") as HTMLButtonElement;
-const stopButton = document.getElementById("stop-btn") as HTMLButtonElement;
+const playToggleButton = document.getElementById("play-toggle-btn") as HTMLButtonElement;
 const outputSelect = document.getElementById(
   "output-select",
 ) as HTMLSelectElement;
@@ -612,35 +611,50 @@ socket.on("disconnect", () => {
     clearInterval(weatherUpdateInterval);
     weatherUpdateInterval = null;
   }
+  
+  // Reset button state on disconnect
+  playToggleButton.textContent = "PLAY";
+  playToggleButton.setAttribute("aria-label", "Start piano playback");
 });
 
 // Event listeners
-startButton.addEventListener("click", async () => {
-  initAudio();
+playToggleButton.addEventListener("click", async () => {
+  // If button says PLAY, we need to start playback
+  if (playToggleButton.textContent === "PLAY") {
+    initAudio();
 
-  // Initialize weather before starting
-  await initWeatherUpdates();
+    // Initialize weather before starting
+    await initWeatherUpdates();
 
-  if (outputSelect.value === "midi") {
-    initMidi().then((success) => {
-      if (success) {
-        musicState.start();
-        logToConsole("Starting MIDI stream - MIDI output");
-      } else {
-        outputSelect.value = "browser";
-        musicState.start();
-        logToConsole("MIDI not available, falling back to browser audio");
-      }
-    });
+    if (outputSelect.value === "midi") {
+      initMidi().then((success) => {
+        if (success) {
+          musicState.start();
+          logToConsole("Starting MIDI stream - MIDI output");
+        } else {
+          outputSelect.value = "browser";
+          musicState.start();
+          logToConsole("MIDI not available, falling back to browser audio");
+        }
+      });
+    } else {
+      musicState.start();
+      logToConsole("Starting MIDI stream - Browser audio");
+    }
+    
+    // Change button text and aria-label
+    playToggleButton.textContent = "PAUSE";
+    playToggleButton.setAttribute("aria-label", "Pause piano playback");
+    
   } else {
-    musicState.start();
-    logToConsole("Starting MIDI stream - Browser audio");
+    // Button must say PAUSE, so we need to stop playback
+    musicState.stop();
+    logToConsole("Stopping MIDI stream");
+    
+    // Change button text and aria-label
+    playToggleButton.textContent = "PLAY";
+    playToggleButton.setAttribute("aria-label", "Start piano playback");
   }
-});
-
-stopButton.addEventListener("click", () => {
-  musicState.stop();
-  logToConsole("Stopping MIDI stream");
 });
 
 outputSelect.addEventListener("change", () => {
@@ -665,7 +679,7 @@ window.addEventListener("beforeunload", () => {
 
 // Initialization
 logToConsole("Player Piano initialized");
-logToConsole("Click START to begin playing");
+logToConsole("Click PLAY to begin playing");
 
 // Check for any existing weather data at startup (especially for Edge browser)
 setTimeout(() => {
