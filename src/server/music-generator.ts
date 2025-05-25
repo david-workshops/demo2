@@ -29,18 +29,18 @@ function applyWeatherInfluence(weather: WeatherData | null) {
   // Reset to defaults if no weather data
   if (!weather) {
     density = defaultSettings.density;
-    
+
     // Ensure we're in a major key for that joyful Christmas sound
     if (currentScale !== "major" && currentScale !== "pentatonicMajor") {
       currentScale = "major";
     }
-    
+
     return defaultSettings;
   }
 
   // Create settings object with defaults
   const settings = { ...defaultSettings };
-  
+
   // Ensure we start with a major key for Christmas carol base
   if (currentScale !== "major" && currentScale !== "pentatonicMajor") {
     currentScale = "major";
