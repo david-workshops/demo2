@@ -23,7 +23,8 @@ const io = new Server(server, {
 app.use(express.static(path.join(__dirname, "../../client")));
 
 // Send all requests to index.html so client-side routing works
-app.get("*", (_req, res) => {
+// Use a RegExp route to bypass path-to-regexp's string parsing which has issues with colons
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "../../client/index.html"));
 });
 
