@@ -74,6 +74,19 @@ io.on("connection", (socket) => {
     try {
       console.log("Generating image from server...");
 
+      // Check if there's already a pending request
+      const debugInfo = freepikService.getDebugInfo();
+      if ((debugInfo.requestStats as any).pendingRequest) {
+        console.log(
+          "Previous image generation still in progress, skipping this request",
+        );
+        socket.emit("image-error", {
+          error:
+            "A previous image generation is still in progress. Please wait for it to complete.",
+        });
+        return;
+      }
+
       // Always check placeholder mode before doing anything
       // This prevents any accidental API calls when in gradient mode
       if (freepikService.getUsePlaceholder()) {
@@ -132,20 +145,36 @@ io.on("connection", (socket) => {
       });
     } else {
       console.log("Periodic generation starting in Freepik API mode");
-      // Only use API when explicitly in API mode
-      freepikService
-        .generateImage()
-        .then((result) => socket.emit("image-generated", result))
-        .catch((error) =>
-          socket.emit("image-error", {
-            error: error instanceof Error ? error.message : String(error),
-          }),
+      // Check if there's a pending request
+      const debugInfo = freepikService.getDebugInfo();
+      if ((debugInfo.requestStats as any).pendingRequest) {
+        console.log(
+          "Previous image generation still in progress, skipping immediate generation",
         );
+      } else {
+        freepikService
+          .generateImage()
+          .then((result) => socket.emit("image-generated", result))
+          .catch((error) =>
+            socket.emit("image-error", {
+              error: error instanceof Error ? error.message : String(error),
+            }),
+          );
+      }
     }
 
     // Set up interval for future generations
     freepikIntervalId = setInterval(async () => {
       try {
+        // Check if there's a pending request - if so, skip this iteration
+        const debugInfo = freepikService.getDebugInfo();
+        if ((debugInfo.requestStats as any).pendingRequest) {
+          console.log(
+            "Previous image generation still in progress, skipping this interval",
+          );
+          return;
+        }
+
         // Always check current mode before each interval
         if (freepikService.getUsePlaceholder()) {
           // Generate gradient without API call
@@ -191,7 +220,25 @@ io.on("connection", (socket) => {
   // Toggle placeholder mode
   socket.on("set-use-placeholder", (value: boolean) => {
     console.log(`Setting placeholder mode to: ${value ? "ON" : "OFF"}`);
-    freepikService.setUsePlaceholder(value);
+    const switchedToApiMode = freepikService.setUsePlaceholder(value);
+
+    // If switching from placeholder to API mode, immediately generate an image
+    if (switchedToApiMode) {
+      console.log("Switched to API mode - immediately generating first image");
+      // Only generate if there's no pending request
+      const debugInfo = freepikService.getDebugInfo();
+      if (!(debugInfo.requestStats as any).pendingRequest) {
+        freepikService
+          .generateImage()
+          .then((result) => socket.emit("image-generated", result))
+          .catch((error) =>
+            socket.emit("image-error", {
+              error: error instanceof Error ? error.message : String(error),
+            }),
+          );
+      }
+    }
+
     // Send updated debug info
     socket.emit("freepik-debug", freepikService.getDebugInfo());
   });
