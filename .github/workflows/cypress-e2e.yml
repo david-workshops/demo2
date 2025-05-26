@@ -1,32 +1,54 @@
-name: Cypress E2E Tests
-
+name: Cypress Tests
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
-
+    branches:
+      - main
 jobs:
-  cypress-run:
-    runs-on: ubuntu-24.04
-    
+  install:
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+
+      - name: Cypress install
+        uses: cypress-io/github-action@v6
         with:
-          node-version: '22.x'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-      
+          # Disable running of tests within install job
+          runTests: false
+          build: npm run build
+
+      - name: Save build folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          if-no-files-found: error
+          path: dist
+
+  cypress-run:
+    runs-on: ubuntu-22.04
+    needs: install
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download the build folder
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
-          install: true
-          start: npm run dev
-          wait-on: 'http://localhost:5173'
-          wait-on-timeout: 120
+          start: npm dev:all
+          browser: chrome
+
+      - name: Archive production artifacts
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: cypress/screenshots
