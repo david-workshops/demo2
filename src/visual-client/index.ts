@@ -185,7 +185,7 @@ function updateWeatherInfo() {
 
     // Force a DOM update in Edge (can help with rendering issues)
     weatherInfoElement.style.display = "none";
-    weatherInfoElement.offsetHeight; // Force a reflow
+    void weatherInfoElement.offsetHeight; // Force a reflow
     weatherInfoElement.style.display = "";
   } catch (error) {
     console.error("Error updating weather display:", error);
