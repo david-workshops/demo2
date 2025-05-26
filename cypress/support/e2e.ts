@@ -1,1 +1,1 @@
-import 'cypress-axe';
+import "cypress-axe";

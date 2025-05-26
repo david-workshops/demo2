@@ -1,16 +1,15 @@
 describe("Player Piano", () => {
   beforeEach(() => {
-    cy.visit("/");
+    cy.visit("http://localhost:5173");
   });
 
   it("should load the application", () => {
     cy.contains("PLAYER PIANO").should("be.visible");
-    cy.contains("GENERATIVE COUNTERPOINT").should("be.visible");
+    cy.contains("GENERATIVE MINIMALISM").should("be.visible");
   });
 
   it("should have working controls", () => {
-    cy.get("#start-btn").should("be.visible");
-    cy.get("#stop-btn").should("be.visible");
+    cy.get("#play-toggle-btn").should("be.visible");
     cy.get("#output-select").should("be.visible");
   });
 
@@ -27,13 +26,16 @@ describe("Player Piano", () => {
   });
 
   it("should update console when start button is clicked", () => {
-    cy.get("#start-btn").click();
+    cy.get("#play-toggle-btn").click();
     cy.get("#console-output").should("contain", "Starting MIDI stream");
   });
 
   it("should update console when stop button is clicked", () => {
-    cy.get("#start-btn").click();
-    cy.get("#stop-btn").click();
+    cy.get("#play-toggle-btn").click();
+    // Wait for the button text to become "PAUSE"
+    cy.get("#play-toggle-btn").should("have.text", "PAUSE");
+    // Now click the button again
+    cy.get("#play-toggle-btn").click();
     cy.get("#console-output").should("contain", "Stopping MIDI stream");
   });
 });
