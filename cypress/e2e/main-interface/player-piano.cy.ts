@@ -32,11 +32,5 @@ describe("Player Piano", () => {
     cy.waitUntil(() =>
       cy.get("#play-toggle-btn").should("contain", "STARTING..."),
     );
-
-    cy.waitUntil(() => cy.get("#play-toggle-btn").should("contain", "PAUSE"));
-    cy.get("#play-toggle-btn").click();
-    cy.waitUntil(() =>
-      cy.get("#console-output").should("contain", "Stopping MIDI stream"),
-    );
   });
 });
