@@ -5,7 +5,7 @@ describe("Player Piano", () => {
 
   it("should load the application", () => {
     cy.contains("PLAYER PIANO").should("be.visible");
-    cy.contains("GENERATIVE MINIMALIST COUNTERPOINT").should("be.visible");
+    cy.contains("GENERATIVE COUNTERPOINT").should("be.visible");
   });
 
   it("should have working controls", () => {
