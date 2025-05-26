@@ -198,7 +198,7 @@ function updateWeatherDisplay(weather: WeatherData) {
 
     // Force a layout recalculation in Edge (helps with rendering issues)
     weatherInfoDisplay.style.display = "none";
-    weatherInfoDisplay.offsetHeight; // Force a reflow
+    void weatherInfoDisplay.offsetHeight; // Force a reflow
     weatherInfoDisplay.style.display = "";
   } catch (error) {
     console.error("Error updating weather display:", error);

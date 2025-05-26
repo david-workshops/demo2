@@ -7,6 +7,16 @@ import { WeatherData } from "../shared/types";
 import dotenv from "dotenv";
 import { freepikService } from "./freepik-service";
 
+// Interface for request stats
+interface RequestStats {
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  lastError: string;
+  lastRequestTime: number;
+  pendingRequest: boolean;
+}
+
 // Load environment variables from .env file
 dotenv.config();
 
@@ -77,7 +87,7 @@ io.on("connection", (socket) => {
 
       // Check if there's already a pending request
       const debugInfo = freepikService.getDebugInfo();
-      if ((debugInfo.requestStats as any).pendingRequest) {
+      if ((debugInfo.requestStats as RequestStats).pendingRequest) {
         console.log(
           "Previous image generation still in progress, skipping this request",
         );
@@ -148,7 +158,7 @@ io.on("connection", (socket) => {
       console.log("Periodic generation starting in Freepik API mode");
       // Check if there's a pending request
       const debugInfo = freepikService.getDebugInfo();
-      if ((debugInfo.requestStats as any).pendingRequest) {
+      if ((debugInfo.requestStats as RequestStats).pendingRequest) {
         console.log(
           "Previous image generation still in progress, skipping immediate generation",
         );
@@ -169,7 +179,7 @@ io.on("connection", (socket) => {
       try {
         // Check if there's a pending request - if so, skip this iteration
         const debugInfo = freepikService.getDebugInfo();
-        if ((debugInfo.requestStats as any).pendingRequest) {
+        if ((debugInfo.requestStats as RequestStats).pendingRequest) {
           console.log(
             "Previous image generation still in progress, skipping this interval",
           );
@@ -228,7 +238,7 @@ io.on("connection", (socket) => {
       console.log("Switched to API mode - immediately generating first image");
       // Only generate if there's no pending request
       const debugInfo = freepikService.getDebugInfo();
-      if (!(debugInfo.requestStats as any).pendingRequest) {
+      if (!(debugInfo.requestStats as RequestStats).pendingRequest) {
         freepikService
           .generateImage()
           .then((result) => socket.emit("image-generated", result))
