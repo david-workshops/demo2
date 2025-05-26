@@ -40,11 +40,22 @@ jobs:
           name: dist
           path: dist
 
-      - name: Cypress run
+      - name: Cypress run - Main Interface
         uses: cypress-io/github-action@v6
         with:
-          start: npm dev:all
+          start: npm run dev:all
           browser: chrome
+          wait-on: 'http://localhost:5173'
+          wait-on-timeout: 120
+          spec: 'cypress/e2e/main-interface/**/*'
+
+      - name: Cypress run - Visualization
+        uses: cypress-io/github-action@v6
+        with:
+          browser: chrome
+          wait-on: 'http://localhost:5174'
+          wait-on-timeout: 120
+          spec: 'cypress/e2e/visualization/**/*'
 
       - name: Archive production artifacts
         if: ${{ failure() }}
