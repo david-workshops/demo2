@@ -1,3 +1,4 @@
+import "cypress-wait-until";
 describe("Player Piano", () => {
   beforeEach(() => {
     cy.visit("http://localhost:5173");
@@ -25,17 +26,17 @@ describe("Player Piano", () => {
     cy.get("#pedals-status").should("be.visible");
   });
 
-  it("should update console when start button is clicked", () => {
+  it("should update console when start button is clicked, and stop when stopped", () => {
+    cy.get("#play-toggle-btn").should("contain", "PLAY");
     cy.get("#play-toggle-btn").click();
-    cy.get("#console-output").should("contain", "Starting MIDI stream");
-  });
+    cy.waitUntil(() =>
+      cy.get("#play-toggle-btn").should("contain", "STARTING..."),
+    );
 
-  it("should update console when stop button is clicked", () => {
+    cy.waitUntil(() => cy.get("#play-toggle-btn").should("contain", "PAUSE"));
     cy.get("#play-toggle-btn").click();
-    // Wait for the button text to become "PAUSE"
-    cy.get("#play-toggle-btn").should("have.text", "PAUSE");
-    // Now click the button again
-    cy.get("#play-toggle-btn").click();
-    cy.get("#console-output").should("contain", "Stopping MIDI stream");
+    cy.waitUntil(() =>
+      cy.get("#console-output").should("contain", "Stopping MIDI stream"),
+    );
   });
 });

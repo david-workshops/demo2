@@ -622,7 +622,7 @@ socket.on("disconnect", () => {
 // Event listeners
 playToggleButton.addEventListener("click", async () => {
   // If button says PLAY, we need to start playback
-  if (playToggleButton.textContent === "PLAY") {
+  if (playToggleButton.textContent?.trim() === "PLAY") {
     // Show loading state
     playToggleButton.textContent = "STARTING...";
     playToggleButton.classList.add("loading");
