@@ -26,7 +26,7 @@ describe("Player Piano", () => {
     cy.get("#pedals-status").should("be.visible");
   });
 
-  it("should update console when start button is clicked, and stop when stopped", () => {
+  it("should update to starting when clicked", () => {
     cy.get("#play-toggle-btn").should("contain", "PLAY");
     cy.get("#play-toggle-btn").click();
     cy.waitUntil(() =>

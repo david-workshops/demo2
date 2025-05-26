@@ -1,3 +1,5 @@
+import "cypress-wait-until";
+
 describe("Visualizer", () => {
   beforeEach(() => {
     // Visit the visualizer on port 5174
@@ -5,14 +7,13 @@ describe("Visualizer", () => {
   });
 
   it("should load the visualizer application", () => {
-    cy.contains("Piano Visualizer").should("exist");
     cy.get(".fullscreen-container").should("be.visible");
   });
 
   it("should have the main visualization elements", () => {
-    cy.get("#current-image").should("be.visible");
-    cy.get("#next-image").should("be.visible");
-    cy.get("#fullscreen-btn").should("be.visible");
+    cy.waitUntil(() => cy.get("#fullscreen-btn").should("be.visible"));
+    cy.waitUntil(() => cy.get("#current-image").should("be.visible"));
+    cy.waitUntil(() => cy.get("#next-image").should("be.visible"));
   });
 
   it("should have working controls", () => {

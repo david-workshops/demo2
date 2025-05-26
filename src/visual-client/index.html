@@ -1,97 +1,129 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Piano Visualizer</title>
-  <link rel="stylesheet" href="styles.css">
-  <meta name="description" content="AI-generated visualizations based on player piano music">
-  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23ffffff' stroke='%23000000' stroke-width='1' d='M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm1 2v14h14V5H5zm6 6h6v2h-6v-2zm0 4h6v2h-6v-2zm-3-8h2v2H8V7zm0 4h2v2H8v-2zm0 4h2v2H8v-2z'/></svg>">
-</head>
-<body>
-  <div class="fullscreen-container">
-    <div id="current-image" class="visualization-image"></div>
-    <div id="next-image" class="visualization-image"></div>
-    <button id="fullscreen-btn" class="fullscreen-button" aria-label="Toggle fullscreen">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-        <path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-      </svg>
-    </button>
-    
-    <div class="controls-container">
-      <button id="mode-toggle-btn" class="mode-toggle-button gradient-mode" aria-label="Toggle between gradient and API mode">
-        <span>Switch to API Images</span>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Piano Visualizer</title>
+    <link rel="stylesheet" href="styles.css" />
+    <meta
+      name="description"
+      content="AI-generated visualizations based on player piano music"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23ffffff' stroke='%23000000' stroke-width='1' d='M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm1 2v14h14V5H5zm6 6h6v2h-6v-2zm0 4h6v2h-6v-2zm-3-8h2v2H8V7zm0 4h2v2H8v-2zm0 4h2v2H8v-2z'/></svg>"
+    />
+  </head>
+  <body>
+    <header style="display: none">
+      <h1>Piano Visualizer</h1>
+      <p class="subtitle">AI-Generated Visualizations</p>
+    </header>
+    <main class="fullscreen-container">
+      <div id="current-image" class="visualization-image"></div>
+      <div id="next-image" class="visualization-image"></div>
+      <button
+        id="fullscreen-btn"
+        class="fullscreen-button"
+        aria-label="Toggle fullscreen"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+        >
+          <path
+            fill="currentColor"
+            d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"
+          />
+        </svg>
       </button>
-    </div>
-    
-    <div id="color-key" class="color-key">
-      <div class="key-item">
-        <span class="key-color high"></span>
-        <span class="key-label">High Notes</span>
+
+      <div class="controls-container">
+        <button
+          id="mode-toggle-btn"
+          class="mode-toggle-button gradient-mode"
+          aria-label="Toggle between gradient and API mode"
+        >
+          <span>Switch to API Images</span>
+        </button>
       </div>
-      <div class="key-item">
-        <span class="key-color mid"></span>
-        <span class="key-label">Mid Notes</span>
+
+      <div id="color-key" class="color-key">
+        <div class="key-item">
+          <span class="key-color high"></span>
+          <span class="key-label">High Notes</span>
+        </div>
+        <div class="key-item">
+          <span class="key-color mid"></span>
+          <span class="key-label">Mid Notes</span>
+        </div>
+        <div class="key-item">
+          <span class="key-color low"></span>
+          <span class="key-label">Low Notes</span>
+        </div>
       </div>
-      <div class="key-item">
-        <span class="key-color low"></span>
-        <span class="key-label">Low Notes</span>
+
+      <div id="debug-overlay" class="debug-overlay">
+        <div class="debug-content">
+          <h2>Debug Information</h2>
+          <div class="info-row">
+            <span class="info-label">PROMPT:</span>
+            <span id="prompt-info" class="info-value">--</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">NOTES INFLUENCING:</span>
+            <span id="notes-info" class="info-value">--</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">WEATHER:</span>
+            <span id="weather-info" class="info-value">--</span>
+          </div>
+
+          <h3>Keyboard Shortcuts</h3>
+          <div class="info-row">
+            <span class="info-label">F key:</span>
+            <span class="info-value">Toggle fullscreen mode</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">V key:</span>
+            <span class="info-value"
+              >Toggle between Gradient and Freepik mode</span
+            >
+          </div>
+          <div class="info-row">
+            <span class="info-label">? key / ESC:</span>
+            <span class="info-value">Show/hide this debug overlay</span>
+          </div>
+
+          <h3>Freepik API Status</h3>
+          <div class="info-row">
+            <span class="info-label">API CONFIGURED:</span>
+            <span id="api-configured" class="info-value">--</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">STATUS:</span>
+            <span id="api-status" class="info-value">--</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">REQUESTS:</span>
+            <span id="api-requests" class="info-value">--</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">LAST ERROR:</span>
+            <span id="api-error" class="info-value">--</span>
+          </div>
+
+          <div
+            id="console-output"
+            class="console-output"
+            aria-live="polite"
+          ></div>
+        </div>
       </div>
-    </div>
-    
-    <div id="debug-overlay" class="debug-overlay">
-      <div class="debug-content">
-        <h2>Debug Information</h2>
-        <div class="info-row">
-          <span class="info-label">PROMPT:</span>
-          <span id="prompt-info" class="info-value">--</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">NOTES INFLUENCING:</span>
-          <span id="notes-info" class="info-value">--</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">WEATHER:</span>
-          <span id="weather-info" class="info-value">--</span>
-        </div>
-        
-        <h3>Keyboard Shortcuts</h3>
-        <div class="info-row">
-          <span class="info-label">F key:</span>
-          <span class="info-value">Toggle fullscreen mode</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">V key:</span>
-          <span class="info-value">Toggle between Gradient and Freepik mode</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">? key / ESC:</span>
-          <span class="info-value">Show/hide this debug overlay</span>
-        </div>
-        
-        <h3>Freepik API Status</h3>
-        <div class="info-row">
-          <span class="info-label">API CONFIGURED:</span>
-          <span id="api-configured" class="info-value">--</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">STATUS:</span>
-          <span id="api-status" class="info-value">--</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">REQUESTS:</span>
-          <span id="api-requests" class="info-value">--</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">LAST ERROR:</span>
-          <span id="api-error" class="info-value">--</span>
-        </div>
-        
-        <div id="console-output" class="console-output" aria-live="polite"></div>
-      </div>
-    </div>
-  </div>
-  
-  <script type="module" src="index.ts"></script>
-</body>
+      <script type="module" src="index.ts"></script>
+    </main>
+  </body>
 </html>
+
