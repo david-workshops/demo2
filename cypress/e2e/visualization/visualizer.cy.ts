@@ -1,5 +1,4 @@
-import "cypress-wait-until";
-
+// Remove the direct import since we're importing in support/e2e.ts
 describe("Visualizer", () => {
   beforeEach(() => {
     // Visit the visualizer on port 5174
@@ -11,9 +10,21 @@ describe("Visualizer", () => {
   });
 
   it("should have the main visualization elements", () => {
-    cy.waitUntil(() => cy.get("#fullscreen-btn").should("be.visible"));
-    cy.waitUntil(() => cy.get("#current-image").should("be.visible"));
-    cy.waitUntil(() => cy.get("#next-image").should("be.visible"));
+    cy.waitUntil(() => 
+      cy.get("#fullscreen-btn").then($btn => {
+        return $btn.length > 0 && $btn.is(":visible");
+      })
+    );
+    cy.waitUntil(() => 
+      cy.get("#current-image").then($img => {
+        return $img.length > 0 && $img.is(":visible");
+      })
+    );
+    cy.waitUntil(() => 
+      cy.get("#next-image").then($img => {
+        return $img.length > 0 && $img.is(":visible");
+      })
+    );
   });
 
   it("should have working controls", () => {

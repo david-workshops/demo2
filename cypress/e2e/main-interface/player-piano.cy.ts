@@ -1,4 +1,4 @@
-import "cypress-wait-until";
+// Remove the direct import since we're importing in support/e2e.ts
 describe("Player Piano", () => {
   beforeEach(() => {
     cy.visit("http://localhost:5173");
@@ -29,8 +29,10 @@ describe("Player Piano", () => {
   it("should update to starting when clicked", () => {
     cy.get("#play-toggle-btn").should("contain", "PLAY");
     cy.get("#play-toggle-btn").click();
-    cy.waitUntil(() =>
-      cy.get("#play-toggle-btn").should("contain", "STARTING..."),
+    cy.waitUntil(() => 
+      cy.get("#play-toggle-btn").then($btn => {
+        return $btn.text().includes("STARTING...");
+      })
     );
   });
 });

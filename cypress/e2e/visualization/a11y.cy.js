@@ -19,13 +19,14 @@ function terminalLog(violations) {
   cy.task("table", violationData);
 }
 
-const pages = ["/"];
-
-pages.forEach((page) => {
-  it(`Has no detectable a11y violations on ${page}`, () => {
+describe("Visualizer Accessibility", () => {
+  beforeEach(() => {
     // Test the page at initial load
-    cy.visit(`http://localhost:5174${page}`);
+    cy.visit("http://localhost:5174");
     cy.injectAxe();
+  });
+
+  it("Has no detectable a11y violations on page load", () => {
     cy.checkA11y(null, null, terminalLog);
   });
 });
