@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
 
+// https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated
 export default defineConfig({
   root: "src/visual-client",
   publicDir: "public",
