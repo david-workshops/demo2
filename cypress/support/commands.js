@@ -25,3 +25,4 @@
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 // Import necessary plugins
 import "cypress-wait-until";
+import "cypress-axe";

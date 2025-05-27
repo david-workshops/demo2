@@ -3,8 +3,9 @@
 import "./commands.js";
 import "./commands";
 
-// Explicitly import cypress-wait-until directly to ensure it's available
+// Explicitly import cypress-wait-until and cypress-axe directly to ensure they're available
 import "cypress-wait-until";
+import "cypress-axe";
 
 // Add type definitions for waitUntil if needed
 declare global {
