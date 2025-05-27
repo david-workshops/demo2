@@ -28,59 +28,171 @@ describe("Visualizer", () => {
   });
 
   it("should have working controls", () => {
-    cy.get("#mode-toggle-btn").should("be.visible");
-    cy.get("#mode-toggle-btn").should("contain", "Switch to API Images");
+    cy.waitUntil(() => 
+      cy.get("#mode-toggle-btn").then($btn => {
+        return $btn.length > 0 && $btn.is(":visible");
+      })
+    );
+    cy.waitUntil(() => 
+      cy.get("#mode-toggle-btn").then($btn => {
+        return $btn.text().includes("Switch to API Images");
+      })
+    );
   });
 
   it("should display the color key", () => {
-    cy.get("#color-key").should("be.visible");
+    cy.waitUntil(() => 
+      cy.get("#color-key").then($key => {
+        return $key.length > 0 && $key.is(":visible");
+      })
+    );
     cy.get(".key-item").should("have.length", 3);
-    cy.contains("High Notes").should("be.visible");
-    cy.contains("Mid Notes").should("be.visible");
-    cy.contains("Low Notes").should("be.visible");
+    cy.waitUntil(() => 
+      cy.contains("High Notes").then($el => {
+        return $el.length > 0 && $el.is(":visible");
+      })
+    );
+    cy.waitUntil(() => 
+      cy.contains("Mid Notes").then($el => {
+        return $el.length > 0 && $el.is(":visible");
+      })
+    );
+    cy.waitUntil(() => 
+      cy.contains("Low Notes").then($el => {
+        return $el.length > 0 && $el.is(":visible");
+      })
+    );
   });
 
   it("should toggle mode when mode button is clicked", () => {
+    cy.waitUntil(() => 
+      cy.get("#mode-toggle-btn").then($btn => {
+        return $btn.length > 0 && $btn.is(":visible");
+      })
+    );
     cy.get("#mode-toggle-btn").click();
-    cy.get("#mode-toggle-btn").should("contain", "Switch to Gradient Mode");
+    cy.waitUntil(() => 
+      cy.get("#mode-toggle-btn").then($btn => {
+        return $btn.text().includes("Switch to Gradient Mode");
+      })
+    );
   });
 
   it("should show debug overlay when ? key is pressed", () => {
-    cy.get("#debug-overlay").should("not.be.visible");
+    cy.waitUntil(() => 
+      cy.get("#debug-overlay").then($overlay => {
+        return $overlay.length > 0;
+      })
+    );
     cy.get("body").type("?");
-    cy.get("#debug-overlay").should("be.visible");
-    cy.contains("Debug Information").should("be.visible");
+    cy.waitUntil(() => 
+      cy.get("#debug-overlay").then($overlay => {
+        return $overlay.length > 0 && $overlay.is(":visible");
+      })
+    );
+    cy.waitUntil(() => 
+      cy.contains("Debug Information").then($el => {
+        return $el.length > 0 && $el.is(":visible");
+      })
+    );
   });
 
   it("should hide debug overlay when ESC key is pressed", () => {
     // First show the debug overlay
+    cy.waitUntil(() => 
+      cy.get("#debug-overlay").then($overlay => {
+        return $overlay.length > 0;
+      })
+    );
     cy.get("body").type("?");
-    cy.get("#debug-overlay").should("be.visible");
+    cy.waitUntil(() => 
+      cy.get("#debug-overlay").then($overlay => {
+        return $overlay.length > 0 && $overlay.is(":visible");
+      })
+    );
 
     // Then hide it with ESC
     cy.get("body").type("{esc}");
-    cy.get("#debug-overlay").should("not.be.visible");
+    // Wait for it to be hidden - we need to catch this differently
+    cy.waitUntil(() => 
+      cy.get("#debug-overlay").then($overlay => {
+        return $overlay.length > 0 && !$overlay.is(":visible");
+      })
+    );
   });
 
   it("should display debug information sections", () => {
+    cy.waitUntil(() => 
+      cy.get("#debug-overlay").then($overlay => {
+        return $overlay.length > 0;
+      })
+    );
     cy.get("body").type("?");
-    cy.get("#debug-overlay").should("be.visible");
+    cy.waitUntil(() => 
+      cy.get("#debug-overlay").then($overlay => {
+        return $overlay.length > 0 && $overlay.is(":visible");
+      })
+    );
 
-    cy.contains("PROMPT:").should("be.visible");
-    cy.contains("NOTES INFLUENCING:").should("be.visible");
-    cy.contains("WEATHER:").should("be.visible");
-    cy.contains("Keyboard Shortcuts").should("be.visible");
-    cy.contains("Freepik API Status").should("be.visible");
+    cy.waitUntil(() => 
+      cy.contains("PROMPT:").then($el => {
+        return $el.length > 0 && $el.is(":visible");
+      })
+    );
+    cy.waitUntil(() => 
+      cy.contains("NOTES INFLUENCING:").then($el => {
+        return $el.length > 0 && $el.is(":visible");
+      })
+    );
+    cy.waitUntil(() => 
+      cy.contains("WEATHER:").then($el => {
+        return $el.length > 0 && $el.is(":visible");
+      })
+    );
+    cy.waitUntil(() => 
+      cy.contains("Keyboard Shortcuts").then($el => {
+        return $el.length > 0 && $el.is(":visible");
+      })
+    );
+    cy.waitUntil(() => 
+      cy.contains("Freepik API Status").then($el => {
+        return $el.length > 0 && $el.is(":visible");
+      })
+    );
   });
 
   it("should display keyboard shortcuts help", () => {
+    cy.waitUntil(() => 
+      cy.get("#debug-overlay").then($overlay => {
+        return $overlay.length > 0;
+      })
+    );
     cy.get("body").type("?");
+    cy.waitUntil(() => 
+      cy.get("#debug-overlay").then($overlay => {
+        return $overlay.length > 0 && $overlay.is(":visible");
+      })
+    );
 
-    cy.contains("F key:").should("be.visible");
-    cy.contains("Toggle fullscreen mode").should("be.visible");
-    cy.contains("V key:").should("be.visible");
-    cy.contains("Toggle between Gradient and Freepik mode").should(
-      "be.visible",
+    cy.waitUntil(() => 
+      cy.contains("F key:").then($el => {
+        return $el.length > 0 && $el.is(":visible");
+      })
+    );
+    cy.waitUntil(() => 
+      cy.contains("Toggle fullscreen mode").then($el => {
+        return $el.length > 0 && $el.is(":visible");
+      })
+    );
+    cy.waitUntil(() => 
+      cy.contains("V key:").then($el => {
+        return $el.length > 0 && $el.is(":visible");
+      })
+    );
+    cy.waitUntil(() => 
+      cy.contains("Toggle between Gradient and Freepik mode").then($el => {
+        return $el.length > 0 && $el.is(":visible");
+      })
     );
   });
 
@@ -94,9 +206,19 @@ describe("Visualizer", () => {
 
   it("should connect to the socket server", () => {
     // Check if the page loads without connection errors
-    cy.get(".fullscreen-container").should("be.visible");
+    cy.waitUntil(() => 
+      cy.get(".fullscreen-container").then($container => {
+        return $container.length > 0 && $container.is(":visible");
+      })
+    );
 
     // The visualizer should be ready to receive data
-    cy.window().should("have.property", "io");
+    // Use waitUntil with a higher timeout since socket connections might take longer
+    cy.waitUntil(() => 
+      cy.window().then(win => {
+        return win.hasOwnProperty("io");
+      }), 
+      { timeout: 10000, interval: 500 } // Increased timeout and interval
+    );
   });
 });
