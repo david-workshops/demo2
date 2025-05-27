@@ -1,0 +1,55 @@
+{
+  "name": "Node.js & TypeScript",
+  "image": "mcr.microsoft.com/vscode/devcontainers/typescript-node",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/desktop-lite:1": {},
+    "ghcr.io/devcontainers/features/sshd:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/go:1": {},
+    "ghcr.io/devcontainers/features/rust:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.renderWhitespace": "boundary",
+        "errorLens.gutterIconsEnabled": true,
+        "errorLens.addAnnotationTextPrefixes": false,
+        "errorLens.enabledDiagnosticLevels": ["error", "warning"],
+        "eslint.lintTask.enable": true
+      },
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bierner.markdown-preview-github-styles",
+        "GitHub.copilot-chat",
+        "GitHub.copilot",
+        "ms-vscode.js-debug-nightly",
+        "firefox-devtools.vscode-firefox-debug",
+        "deque-systems.vscode-axe-linter"
+      ]
+    }
+  },
+  "postCreateCommand": "npm install",
+  "forwardPorts": [3000, 6080, 5901, 5173, 5174],
+  "portsAttributes": {
+    "3000": {
+      "label": "Server"
+    },
+    "6080": {
+      "label": "Desktop (Web)"
+    },
+    "5901": {
+      "label": "Desktop (VNC)"
+    },
+    "5173": {
+      "label": "Main interface",
+      "onAutoForward": "openBrowser"
+    },
+    "5174": {
+      "label": "Visualization",
+      "onAutoForward": "openBrowser"
+    }
+  }
+}
