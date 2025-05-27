@@ -1,5 +1,5 @@
-import "cypress-axe";
-import "cypress-wait-until";
+// Import TypeScript commands
+import "./commands";
 
 // Add type definitions for waitUntil if needed
 declare global {
