@@ -8,7 +8,8 @@ import "cypress-wait-until";
 import "cypress-axe";
 
 // Set default options for waitUntil
-Cypress.Commands.overwrite('waitUntil', (originalFn, subject, options = {}) => {
+// Note: The signature for waitUntil should be (originalFn, subject, checkFunction, options)
+Cypress.Commands.overwrite('waitUntil', (originalFn, subject, checkFunction, options = {}) => {
   // Set higher default timeout and interval
   const defaultOptions = { 
     timeout: 8000,    // Default to 8 seconds
@@ -16,7 +17,7 @@ Cypress.Commands.overwrite('waitUntil', (originalFn, subject, options = {}) => {
     ...options        // Override with any passed options
   };
   
-  return originalFn(subject, defaultOptions);
+  return originalFn(subject, checkFunction, defaultOptions);
 });
 
 // Add type definitions for waitUntil if needed

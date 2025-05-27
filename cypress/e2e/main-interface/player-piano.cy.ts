@@ -29,11 +29,11 @@ describe("Player Piano", () => {
   it("should update to starting when clicked", () => {
     cy.get("#play-toggle-btn").should("contain", "PLAY");
     cy.get("#play-toggle-btn").click();
-    // Pass a function that returns a promise resolving to a boolean
-    cy.waitUntil(function() {
-      return cy.get("#play-toggle-btn")
-        .invoke("text")
-        .then(text => text.includes("STARTING..."));
+    // Pass a function that returns a boolean
+    cy.waitUntil(() => {
+      return cy.get("#play-toggle-btn").then($btn => {
+        return $btn.text().includes("STARTING...");
+      });
     });
   });
 });
