@@ -23,4 +23,5 @@
 //
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
-// We're now importing cypress-wait-until in e2e.ts
+// Import necessary plugins
+import "cypress-wait-until";

@@ -1,5 +1,10 @@
-// Import TypeScript commands
+// Import both JavaScript and TypeScript commands
+// The TypeScript commands come first so they can override any JS declarations if needed
+import "./commands.js";
 import "./commands";
+
+// Explicitly import cypress-wait-until directly to ensure it's available
+import "cypress-wait-until";
 
 // Add type definitions for waitUntil if needed
 declare global {
