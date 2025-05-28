@@ -1,5 +1,12 @@
 // Define at the top of the spec file or just import it
-function terminalLog(violations: any[]) {
+interface AccessibilityViolation {
+  id: string;
+  impact: string;
+  description: string;
+  nodes: { length: number }[];
+}
+
+function terminalLog(violations: AccessibilityViolation[]) {
   cy.task(
     "log",
     `${violations.length} accessibility violation${
@@ -27,11 +34,11 @@ describe("Main Interface Accessibility", () => {
   });
 
   it("Has no detectable a11y violations on page load", () => {
-    cy.checkA11y(null, null, terminalLog);
+    cy.checkA11y(undefined, {}, terminalLog);
   });
 
   it("Has no a11y violations after play button click", () => {
     cy.get("#play-toggle-btn").click();
-    cy.checkA11y(null, null, terminalLog);
+    cy.checkA11y(undefined, {}, terminalLog);
   });
 });

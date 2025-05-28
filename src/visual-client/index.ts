@@ -392,20 +392,23 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-// Initialize displays with current state
-updateNotesInfo();
-updateWeatherInfo();
-updateApiDebugInfo();
+// Set fullscreen button initially visible
+fullscreenButton.classList.add("visible");
 
 // Set initial visualization mode state
 modeToggleButton.innerHTML = "<span>Switch to API Images</span>";
 modeToggleButton.classList.add("gradient-mode");
 colorKey.style.display = "flex"; // Always start with color key visible
-// Initial state will be hidden until mouse movement
-colorKey.classList.remove("visible");
+// Initially visible, will fade out with mouse inactivity
+colorKey.classList.add("visible");
 
-// Make sure controls container has proper initial state
-document.querySelector(".controls-container")?.classList.remove("visible");
+// Make controls initially visible and then fade out after a delay
+document.querySelector(".controls-container")?.classList.add("visible");
+
+// Set timeout to hide controls after initial display
+setTimeout(() => {
+  document.querySelector(".controls-container")?.classList.remove("visible");
+}, MOUSE_ACTIVITY_TIMEOUT);
 
 // Initialization message
 logToConsole("Piano Visualizer initialized");
