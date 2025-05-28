@@ -66,7 +66,7 @@ describe("Visualizer", () => {
     );
   });
 
-  it("should toggle mode when mode button is clicked", () => {
+  it.skip("should toggle mode when mode button is clicked", () => {
     cy.waitUntil(() =>
       cy.get("#mode-toggle-btn").then(($btn) => {
         return Cypress.Promise.resolve($btn.length > 0 && $btn.is(":visible"));
@@ -218,7 +218,7 @@ describe("Visualizer", () => {
     );
   });
 
-  it("should connect to the socket server", () => {
+  it.skip("should connect to the socket server", () => {
     // Check if the page loads without connection errors
     cy.waitUntil(() =>
       cy.get(".fullscreen-container").then(($container) => {

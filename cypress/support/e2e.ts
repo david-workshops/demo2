@@ -11,7 +11,7 @@ import "cypress-axe";
 // Note: waitUntil is a parent command, so it only takes checkFunction and options
 Cypress.Commands.overwrite(
   "waitUntil",
-  <T>(originalFn, checkFunction, options = {}) => {
+  <T>(originalFn, subject, checkFunction, options = {}) => {
     // Set higher default timeout and interval
     const defaultOptions = {
       timeout: 8000, // Default to 8 seconds
@@ -19,7 +19,7 @@ Cypress.Commands.overwrite(
       ...options, // Override with any passed options
     };
 
-    return originalFn(checkFunction, defaultOptions);
+    return originalFn(subject, checkFunction, defaultOptions);
   },
 );
 
