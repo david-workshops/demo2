@@ -31,7 +31,7 @@ describe("Player Piano", () => {
     cy.get("#play-toggle-btn").click();
     // Pass a function that returns a boolean
     cy.waitUntil(() => {
-      return cy.get("#play-toggle-btn").then($btn => {
+      return cy.get("#play-toggle-btn").then(($btn) => {
         return Cypress.Promise.resolve($btn.text().includes("STARTING..."));
       });
     });
