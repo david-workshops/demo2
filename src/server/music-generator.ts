@@ -113,37 +113,21 @@ function applyWeatherInfluence(weather: WeatherData | null) {
     settings.velocityRange = { min: 40, max: 127 }; // Dramatic dynamics
     settings.density = 0.9; // More dense
   }
-  // Wind conditions - creating rustling through trees effect
-  else if ([20, 21, 22, 23, 24, 25].includes(code)) {
-    settings.density = 0.3; // Very sparse, intermittent
-    settings.minOctave = 4; // Higher registers (trees/leaves)
-    settings.maxOctave = 7; // Extended high range
-    settings.noteDurationRange = { min: 100, max: 600 }; // Very short durations
-    settings.velocityRange = { min: 30, max: 90 }; // Varying dynamics like wind gusts
-    settings.sustainProbability = 0.01; // Minimal sustain - dry, staccato
-
-    // More aggressive settings for stronger wind
-    if ([23, 24, 25].includes(code)) {
-      settings.density = 0.4; // Slightly more notes for stronger wind
-      settings.velocityRange = { min: 40, max: 110 }; // Wider dynamic range
-      settings.noteDurationRange = { min: 80, max: 500 }; // Even shorter for gusts
-    }
-  }
 
   // Update global density
   density = settings.density;
 
   return settings;
 }
-// Weather influence settings
+// Weather influence settings - now defaults to wind effect characteristics
 const defaultSettings = {
   tempo: 100, // Base tempo (events per minute)
-  density: 0.7, // Probability of generating notes vs. silence
-  minOctave: 1, // Minimum octave
-  maxOctave: 7, // Maximum octave
-  sustainProbability: 0.05, // Probability of using sustain pedal
-  velocityRange: { min: 60, max: 100 }, // Velocity range for notes
-  noteDurationRange: { min: 500, max: 2500 }, // Duration range in ms
+  density: 0.3, // Very sparse, intermittent (wind-like)
+  minOctave: 4, // Higher registers (trees/leaves)
+  maxOctave: 7, // Extended high range
+  sustainProbability: 0.01, // Minimal sustain - dry, staccato (wind-like)
+  velocityRange: { min: 30, max: 90 }, // Varying dynamics like wind gusts
+  noteDurationRange: { min: 100, max: 600 }, // Very short durations (wind-like)
 };
 
 // Helper function to get notes in the current key and scale
