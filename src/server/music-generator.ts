@@ -130,6 +130,17 @@ const defaultSettings = {
   noteDurationRange: { min: 500, max: 2500 }, // Duration range in ms
 };
 
+// Elevator music settings - calming, predictable, and pleasant
+const elevatorMusicSettings = {
+  tempo: 70, // Slower tempo for calming effect
+  density: 0.6, // Slightly less dense for clarity
+  minOctave: 3, // Mid-range register for pleasant sound
+  maxOctave: 6, // Not too high to avoid shrillness
+  sustainProbability: 0.2, // More sustain for smoothness
+  velocityRange: { min: 45, max: 75 }, // Softer dynamics
+  noteDurationRange: { min: 800, max: 3200 }, // Longer notes for smoothness
+};
+
 // Helper function to get notes in the current key and scale
 function getScaleNotes(): number[] {
   return SCALES[currentScale].map((interval) => (currentKey + interval) % 12);
@@ -293,7 +304,12 @@ function decidePedal(weather: WeatherData | null): Pedal | null {
 // Main function to generate MIDI events
 export function generateMidiEvent(
   weather: WeatherData | null = null,
+  elevatorMode: boolean = false,
 ): MidiEvent {
+  // If elevator mode is enabled, use the elevator music generator
+  if (elevatorMode) {
+    return generateElevatorMusicEvent();
+  }
   _noteCounter++;
   maybeChangeMusicalContext();
 
@@ -367,6 +383,174 @@ export function generateMidiEvent(
       notes,
       currentKey: NOTES[currentKey],
       currentScale,
+    };
+  }
+}
+
+// Helper function to generate a random note with elevator music settings
+function generateElevatorNote(): Note {
+  // Force major scale for positive, calming feel
+  const elevatorScale = "major";
+  const scaleNotes = SCALES[elevatorScale].map(
+    (interval) => (currentKey + interval) % 12,
+  );
+  const noteIndex = Math.floor(Math.random() * scaleNotes.length);
+  const note = scaleNotes[noteIndex];
+
+  // Use elevator music octave range
+  const octave =
+    Math.floor(
+      Math.random() *
+        (elevatorMusicSettings.maxOctave - elevatorMusicSettings.minOctave + 1),
+    ) + elevatorMusicSettings.minOctave;
+  const midiNum = note + octave * 12 + 12; // MIDI note numbers start at C0 = 12
+
+  // Softer velocity for calm effect
+  const velocity =
+    Math.floor(
+      Math.random() *
+        (elevatorMusicSettings.velocityRange.max -
+          elevatorMusicSettings.velocityRange.min +
+          1),
+    ) + elevatorMusicSettings.velocityRange.min;
+
+  // Longer duration for smoothness
+  const duration =
+    Math.random() *
+      (elevatorMusicSettings.noteDurationRange.max -
+        elevatorMusicSettings.noteDurationRange.min) +
+    elevatorMusicSettings.noteDurationRange.min;
+
+  return {
+    name: NOTES[note],
+    octave,
+    midiNumber: midiNum,
+    velocity,
+    duration,
+  };
+}
+
+// Helper function to generate elevator chord
+function generateElevatorChord(numNotes = 3): Note[] {
+  // Force major scale for positive feeling
+  const elevatorScale = "major";
+  const scaleNotes = SCALES[elevatorScale].map(
+    (interval) => (currentKey + interval) % 12,
+  );
+  const rootIndex = Math.floor(Math.random() * scaleNotes.length);
+  const rootNote = scaleNotes[rootIndex];
+
+  const chordNotes: Note[] = [];
+
+  // Root octave in middle register
+  const rootOctave =
+    Math.floor(Math.random() * 2) +
+    Math.max(3, elevatorMusicSettings.minOctave);
+
+  // Softer velocity for calm effect
+  const rootVelocity =
+    Math.floor(Math.random() * 20) + elevatorMusicSettings.velocityRange.min;
+  const rootDuration =
+    Math.random() *
+      (elevatorMusicSettings.noteDurationRange.max -
+        elevatorMusicSettings.noteDurationRange.min) +
+    elevatorMusicSettings.noteDurationRange.min;
+
+  chordNotes.push({
+    name: NOTES[rootNote],
+    octave: rootOctave,
+    midiNumber: rootNote + rootOctave * 12 + 12,
+    velocity: rootVelocity,
+    duration: rootDuration,
+  });
+
+  // Add other chord tones (using 3rds)
+  for (let i = 1; i < numNotes; i++) {
+    const nextIndex = (rootIndex + i * 2) % scaleNotes.length;
+    const nextNote = scaleNotes[nextIndex];
+    const nextOctave = rootOctave + (nextIndex < rootIndex ? 1 : 0);
+
+    chordNotes.push({
+      name: NOTES[nextNote],
+      octave: nextOctave,
+      midiNumber: nextNote + nextOctave * 12 + 12,
+      velocity:
+        Math.floor(Math.random() * 15) +
+        Math.max(30, elevatorMusicSettings.velocityRange.min - 15),
+      duration: chordNotes[0].duration * (0.9 + Math.random() * 0.2), // Slight variation from root
+    });
+  }
+
+  return chordNotes;
+}
+
+// Helper function to decide pedal usage for elevator music
+function decideElevatorPedal(): Pedal | null {
+  const rand = Math.random();
+
+  // Higher probability of sustain pedal for smoothness
+  if (rand < elevatorMusicSettings.sustainProbability) {
+    return { type: "sustain", value: Math.random() * 0.4 + 0.6 }; // 0.6-1.0 for more sustain
+  } else if (rand < elevatorMusicSettings.sustainProbability * 1.5) {
+    return { type: "soft", value: Math.random() * 0.5 + 0.5 }; // 0.5-1.0 for softer sound
+  }
+
+  return null;
+}
+
+// Main function to generate elevator music events
+export function generateElevatorMusicEvent(): MidiEvent {
+  _noteCounter++;
+
+  // Ensure we stay in major scale for positive feeling
+  if (currentScale !== "major") {
+    currentScale = "major";
+  }
+
+  // Occasionally change key, but less frequently than regular music
+  const now = Date.now();
+  if (now - lastModeChangeTime > 5 * 60 * 1000 && Math.random() < 0.005) {
+    // Even less frequent key changes (5+ minutes)
+    currentKey = Math.floor(Math.random() * 12);
+    lastModeChangeTime = now;
+  }
+
+  // Introduce silence based on elevator music density
+  if (Math.random() > elevatorMusicSettings.density) {
+    return {
+      type: "silence",
+      duration: Math.random() * 600 + 200, // 200-800ms of silence
+    };
+  }
+
+  // Occasionally use pedals for smoothness
+  const pedal = decideElevatorPedal();
+  if (pedal) {
+    return {
+      type: "pedal",
+      pedal,
+    };
+  }
+
+  // Decide between note and chord (simpler than regular music, no counterpoint)
+  const eventType = Math.random();
+
+  if (eventType < 0.6) {
+    // Generate a single note (slightly more likely for clarity)
+    return {
+      type: "note",
+      note: generateElevatorNote(),
+      currentKey: NOTES[currentKey],
+      currentScale: "major",
+    };
+  } else {
+    // Generate a chord (smaller chords for elevator music)
+    const chordSize = Math.floor(Math.random() * 2) + 3; // 3-4 notes (smaller than regular)
+    return {
+      type: "chord",
+      notes: generateElevatorChord(chordSize),
+      currentKey: NOTES[currentKey],
+      currentScale: "major",
     };
   }
 }
