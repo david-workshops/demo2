@@ -57,4 +57,38 @@ describe("Music Generator", () => {
     // We should observe at least 3 different event types
     expect(eventTypes.size).toBeGreaterThanOrEqual(3);
   });
+
+  it("should use Christmas carol settings as the base", () => {
+    // Generate events without weather data to check default settings
+    const events = [];
+    for (let i = 0; i < 20; i++) {
+      events.push(generateMidiEvent(null));
+    }
+
+    // Check for Christmas carol characteristics in default settings
+    const noteEvents = events.filter(
+      (event) =>
+        event.type === "note" ||
+        event.type === "chord" ||
+        event.type === "counterpoint",
+    );
+
+    // Should have some note events
+    expect(noteEvents.length).toBeGreaterThan(0);
+
+    // Check scale - should be major by default for Christmas carol
+    const scalesUsed = new Set();
+    noteEvents.forEach((event) => {
+      if (
+        event.type === "note" ||
+        event.type === "chord" ||
+        event.type === "counterpoint"
+      ) {
+        scalesUsed.add(event.currentScale);
+      }
+    });
+    expect(
+      scalesUsed.has("major") || scalesUsed.has("pentatonicMajor"),
+    ).toBeTruthy();
+  });
 });
