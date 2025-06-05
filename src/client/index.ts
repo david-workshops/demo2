@@ -8,6 +8,9 @@ const socket = musicState.getSocket();
 const playToggleButton = document.getElementById(
   "play-toggle-btn",
 ) as HTMLButtonElement;
+const jungleToggleButton = document.getElementById(
+  "jungle-toggle-btn",
+) as HTMLButtonElement;
 const outputSelect = document.getElementById(
   "output-select",
 ) as HTMLSelectElement;
@@ -47,6 +50,9 @@ const pedalStatus = musicState.getPedalStatus();
 // Weather state
 let weatherUpdateInterval: number | null = null;
 const WEATHER_UPDATE_INTERVAL = 10 * 60 * 1000; // 10 minutes
+
+// Jungle mode state
+let jungleMode = false;
 
 // Initialize audio
 function initAudio() {
@@ -299,21 +305,112 @@ function playNote(note: Note) {
 
   // Create oscillator
   const oscillator = audioContext.createOscillator();
-  oscillator.type = "sine"; // Piano-like sound
+
+  // Set oscillator type based on jungle mode and note range
+  if (jungleMode) {
+    // Map note ranges to different animals with specific waveforms
+    if (note.midiNumber >= 84) {
+      // Very high notes: insects (buzzing)
+      oscillator.type = "sawtooth";
+    } else if (note.midiNumber >= 72) {
+      // High notes: birds (chirping)
+      oscillator.type = "triangle";
+    } else if (note.midiNumber >= 48) {
+      // Mid notes: monkeys (chattering)
+      oscillator.type = "square";
+    } else {
+      // Low notes: frogs (croaking)
+      oscillator.type = "sine";
+    }
+  } else {
+    oscillator.type = "sine"; // Piano-like sound
+  }
+
   oscillator.frequency.value = midiToFrequency(note.midiNumber);
 
   // Create note-specific gain node for envelope
   const noteGain = audioContext.createGain();
   noteGain.gain.value = 0;
 
-  // Connect nodes
-  oscillator.connect(noteGain);
+  // Add jungle-specific effects
+  if (jungleMode) {
+    // Add filtering for more realistic animal sounds
+    const filter = audioContext.createBiquadFilter();
+
+    if (note.midiNumber >= 84) {
+      // Insects: high-pass filter + rapid tremolo
+      filter.type = "highpass";
+      filter.frequency.value = 2000;
+
+      // Create tremolo effect for buzzing insects
+      const tremolo = audioContext.createGain();
+      const lfo = audioContext.createOscillator();
+      lfo.type = "sine";
+      lfo.frequency.value = 15; // Fast tremolo
+      lfo.start(now);
+      lfo.stop(now + note.duration / 1000);
+
+      const lfoGain = audioContext.createGain();
+      lfoGain.gain.value = 0.3;
+      lfo.connect(lfoGain);
+      lfoGain.connect(tremolo.gain);
+
+      oscillator.connect(tremolo);
+      tremolo.connect(filter);
+      filter.connect(noteGain);
+    } else if (note.midiNumber >= 72) {
+      // Birds: band-pass filter for chirping
+      filter.type = "bandpass";
+      filter.frequency.value = 1500;
+      filter.Q.value = 5;
+      oscillator.connect(filter);
+      filter.connect(noteGain);
+    } else if (note.midiNumber >= 48) {
+      // Monkeys: low-pass filter with resonance
+      filter.type = "lowpass";
+      filter.frequency.value = 800;
+      filter.Q.value = 3;
+      oscillator.connect(filter);
+      filter.connect(noteGain);
+    } else {
+      // Frogs: low-pass filter for deep croaking
+      filter.type = "lowpass";
+      filter.frequency.value = 400;
+      oscillator.connect(filter);
+      filter.connect(noteGain);
+    }
+  } else {
+    // Connect normally for piano mode
+    oscillator.connect(noteGain);
+  }
+
+  // Connect to main gain
   noteGain.connect(gainNode);
 
-  // Apply envelope
+  // Apply envelope (modified for jungle sounds)
   const velocityGain = note.velocity / 127;
-  const attackTime = 0.01;
-  const releaseTime = 0.3;
+  let attackTime = 0.01;
+  let releaseTime = 0.3;
+
+  if (jungleMode) {
+    if (note.midiNumber >= 84) {
+      // Insects: very fast attack, short release
+      attackTime = 0.005;
+      releaseTime = 0.1;
+    } else if (note.midiNumber >= 72) {
+      // Birds: fast attack, medium release
+      attackTime = 0.01;
+      releaseTime = 0.2;
+    } else if (note.midiNumber >= 48) {
+      // Monkeys: medium attack, short release
+      attackTime = 0.02;
+      releaseTime = 0.15;
+    } else {
+      // Frogs: slow attack, long release for croaking
+      attackTime = 0.05;
+      releaseTime = 0.4;
+    }
+  }
 
   // Attack
   noteGain.gain.setValueAtTime(0, now);
@@ -514,6 +611,22 @@ function updateNotesPlayingDisplay() {
   }
 }
 
+// Update jungle button display
+function updateJungleButtonDisplay() {
+  if (jungleMode) {
+    jungleToggleButton.textContent = "PIANO MODE";
+    jungleToggleButton.classList.add("active");
+    jungleToggleButton.setAttribute("aria-label", "Switch to piano mode");
+  } else {
+    jungleToggleButton.textContent = "JUNGLE MODE";
+    jungleToggleButton.classList.remove("active");
+    jungleToggleButton.setAttribute(
+      "aria-label",
+      "Switch to jungle sounds mode",
+    );
+  }
+}
+
 // Convert MIDI note number to frequency
 function midiToFrequency(midi: number): number {
   return 440 * Math.pow(2, (midi - 69) / 12);
@@ -604,6 +717,8 @@ musicState.subscribe((event: MusicStateEvent) => {
 // Socket connection events
 socket.on("connect", () => {
   logToConsole("Connected to server");
+  // Request current jungle mode status when connecting
+  socket.emit("get-jungle-mode");
 });
 
 socket.on("disconnect", () => {
@@ -617,6 +732,22 @@ socket.on("disconnect", () => {
   // Reset button state on disconnect
   playToggleButton.textContent = "PLAY";
   playToggleButton.setAttribute("aria-label", "Start piano playback");
+});
+
+// Handle jungle mode status updates
+socket.on("jungle-mode-status", (enabled: boolean) => {
+  jungleMode = enabled;
+  updateJungleButtonDisplay();
+  logToConsole(`Jungle mode is ${enabled ? "enabled" : "disabled"}`);
+});
+
+// Handle jungle mode changes from other clients
+socket.on("jungle-mode-changed", (enabled: boolean) => {
+  jungleMode = enabled;
+  updateJungleButtonDisplay();
+  logToConsole(
+    `Jungle mode ${enabled ? "enabled" : "disabled"} by another client`,
+  );
 });
 
 // Event listeners
@@ -671,6 +802,17 @@ playToggleButton.addEventListener("click", async () => {
     playToggleButton.textContent = "PLAY";
     playToggleButton.setAttribute("aria-label", "Start piano playback");
   }
+});
+
+jungleToggleButton.addEventListener("click", () => {
+  // Toggle jungle mode
+  jungleMode = !jungleMode;
+  updateJungleButtonDisplay();
+
+  // Send jungle mode change to server
+  socket.emit("set-jungle-mode", jungleMode);
+
+  logToConsole(`Jungle mode ${jungleMode ? "enabled" : "disabled"}`);
 });
 
 outputSelect.addEventListener("change", () => {
