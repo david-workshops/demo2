@@ -113,6 +113,22 @@ function applyWeatherInfluence(weather: WeatherData | null) {
     settings.velocityRange = { min: 40, max: 127 }; // Dramatic dynamics
     settings.density = 0.9; // More dense
   }
+  // Wind conditions - creating rustling through trees effect
+  else if ([20, 21, 22, 23, 24, 25].includes(code)) {
+    settings.density = 0.3; // Very sparse, intermittent
+    settings.minOctave = 4; // Higher registers (trees/leaves)
+    settings.maxOctave = 7; // Extended high range
+    settings.noteDurationRange = { min: 100, max: 600 }; // Very short durations
+    settings.velocityRange = { min: 30, max: 90 }; // Varying dynamics like wind gusts
+    settings.sustainProbability = 0.01; // Minimal sustain - dry, staccato
+
+    // More aggressive settings for stronger wind
+    if ([23, 24, 25].includes(code)) {
+      settings.density = 0.4; // Slightly more notes for stronger wind
+      settings.velocityRange = { min: 40, max: 110 }; // Wider dynamic range
+      settings.noteDurationRange = { min: 80, max: 500 }; // Even shorter for gusts
+    }
+  }
 
   // Update global density
   density = settings.density;

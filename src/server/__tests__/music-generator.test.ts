@@ -57,4 +57,77 @@ describe("Music Generator", () => {
     // We should observe at least 3 different event types
     expect(eventTypes.size).toBeGreaterThanOrEqual(3);
   });
+
+  it("should apply wind weather conditions correctly", () => {
+    const windWeather = {
+      temperature: 20,
+      weatherCode: 22, // Strong wind
+      weatherDescription: "Strong wind",
+    };
+
+    // Generate multiple events with wind weather to test characteristics
+    const windEvents = [];
+    for (let i = 0; i < 50; i++) {
+      const event = generateMidiEvent(windWeather);
+      if (event.type === "note") {
+        windEvents.push(event);
+      }
+    }
+
+    // Should have some wind events
+    expect(windEvents.length).toBeGreaterThan(0);
+
+    // Test wind characteristics: higher octaves, shorter durations, varying velocities
+    windEvents.forEach((event) => {
+      if (event.type === "note") {
+        // Wind should favor higher registers (4-7 octaves)
+        expect(event.note.octave).toBeGreaterThanOrEqual(4);
+        expect(event.note.octave).toBeLessThanOrEqual(7);
+
+        // Wind should have shorter durations (100-600ms)
+        expect(event.note.duration).toBeGreaterThanOrEqual(100);
+        expect(event.note.duration).toBeLessThanOrEqual(600);
+
+        // Wind should have varying velocities (30-90 for normal wind)
+        expect(event.note.velocity).toBeGreaterThanOrEqual(30);
+        expect(event.note.velocity).toBeLessThanOrEqual(90);
+      }
+    });
+  });
+
+  it("should apply stronger wind weather conditions correctly", () => {
+    const strongWindWeather = {
+      temperature: 18,
+      weatherCode: 25, // Windy with gusts
+      weatherDescription: "Windy with gusts",
+    };
+
+    // Generate multiple events with strong wind weather
+    const strongWindEvents = [];
+    for (let i = 0; i < 50; i++) {
+      const event = generateMidiEvent(strongWindWeather);
+      if (event.type === "note") {
+        strongWindEvents.push(event);
+      }
+    }
+
+    expect(strongWindEvents.length).toBeGreaterThan(0);
+
+    // Test stronger wind characteristics: wider velocity range, even shorter durations
+    strongWindEvents.forEach((event) => {
+      if (event.type === "note") {
+        // Should still favor higher registers
+        expect(event.note.octave).toBeGreaterThanOrEqual(4);
+        expect(event.note.octave).toBeLessThanOrEqual(7);
+
+        // Should have even shorter durations (80-500ms)
+        expect(event.note.duration).toBeGreaterThanOrEqual(80);
+        expect(event.note.duration).toBeLessThanOrEqual(500);
+
+        // Should have wider velocity range for gusts (40-110)
+        expect(event.note.velocity).toBeGreaterThanOrEqual(40);
+        expect(event.note.velocity).toBeLessThanOrEqual(110);
+      }
+    });
+  });
 });
