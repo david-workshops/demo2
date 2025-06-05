@@ -211,6 +211,10 @@ export class FreepikService {
       } else if ([95, 96, 99].includes(code)) {
         // Thunderstorm
         prompt += ", dramatic contrasts, electric energy";
+      } else if ([20, 21, 22, 23, 24, 25].includes(code)) {
+        // Wind conditions
+        prompt +=
+          ", flowing organic patterns, gentle movement, rustling textures";
       }
     }
 
@@ -363,6 +367,11 @@ export class FreepikService {
         ) {
           // Rain
           requestBody.engine = "magnific_illusio"; // Softer for rainy days
+        } else if (
+          [20, 21, 22, 23, 24, 25].includes(this.weatherData.weatherCode)
+        ) {
+          // Wind conditions
+          requestBody.engine = "magnific_sparkle"; // Dynamic movement for wind
         } else {
           requestBody.engine = "magnific_sparkle"; // Middle ground for other conditions
         }

@@ -119,15 +119,15 @@ function applyWeatherInfluence(weather: WeatherData | null) {
 
   return settings;
 }
-// Weather influence settings
+// Weather influence settings - now defaults to wind effect characteristics
 const defaultSettings = {
   tempo: 100, // Base tempo (events per minute)
-  density: 0.7, // Probability of generating notes vs. silence
-  minOctave: 1, // Minimum octave
-  maxOctave: 7, // Maximum octave
-  sustainProbability: 0.05, // Probability of using sustain pedal
-  velocityRange: { min: 60, max: 100 }, // Velocity range for notes
-  noteDurationRange: { min: 500, max: 2500 }, // Duration range in ms
+  density: 0.3, // Very sparse, intermittent (wind-like)
+  minOctave: 4, // Higher registers (trees/leaves)
+  maxOctave: 7, // Extended high range
+  sustainProbability: 0.01, // Minimal sustain - dry, staccato (wind-like)
+  velocityRange: { min: 30, max: 90 }, // Varying dynamics like wind gusts
+  noteDurationRange: { min: 100, max: 600 }, // Very short durations (wind-like)
 };
 
 // Helper function to get notes in the current key and scale
