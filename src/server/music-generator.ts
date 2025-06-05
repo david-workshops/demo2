@@ -23,6 +23,7 @@ let lastModeChangeTime = Date.now();
 let _noteCounter = 0;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let density = 0.7; // Probability of generating a note vs. silence
+let jungleModeEnabled = false;
 
 // Apply weather influence to music parameters
 function applyWeatherInfluence(weather: WeatherData | null) {
@@ -227,6 +228,84 @@ function generateChord(weather: WeatherData | null, numNotes = 3): Note[] {
   return chordNotes;
 }
 
+// Generate jungle animal-specific notes
+function generateAnimalNote(
+  animalType: "bird" | "monkey" | "frog" | "insect",
+  weather: WeatherData | null,
+): Note {
+  const scaleNotes = getScaleNotes();
+  const noteIndex = Math.floor(Math.random() * scaleNotes.length);
+  const note = scaleNotes[noteIndex];
+
+  let octaveRange: { min: number; max: number };
+  let velocityRange: { min: number; max: number };
+  let durationRange: { min: number; max: number };
+
+  switch (animalType) {
+    case "bird":
+      // Birds: high frequency, short chirping notes
+      octaveRange = { min: 6, max: 8 };
+      velocityRange = { min: 80, max: 110 };
+      durationRange = { min: 150, max: 500 };
+      break;
+    case "monkey":
+      // Monkeys: mid frequency, varied chattering
+      octaveRange = { min: 4, max: 6 };
+      velocityRange = { min: 60, max: 100 };
+      durationRange = { min: 200, max: 800 };
+      break;
+    case "frog":
+      // Frogs: low frequency, longer croaking
+      octaveRange = { min: 2, max: 4 };
+      velocityRange = { min: 70, max: 90 };
+      durationRange = { min: 400, max: 1200 };
+      break;
+    case "insect":
+      // Insects: very high frequency, buzzing
+      octaveRange = { min: 7, max: 9 };
+      velocityRange = { min: 50, max: 80 };
+      durationRange = { min: 100, max: 300 };
+      break;
+  }
+
+  const octave =
+    Math.floor(Math.random() * (octaveRange.max - octaveRange.min + 1)) +
+    octaveRange.min;
+  const midiNum = note + octave * 12 + 12;
+  const velocity =
+    Math.floor(Math.random() * (velocityRange.max - velocityRange.min + 1)) +
+    velocityRange.min;
+  const duration =
+    Math.random() * (durationRange.max - durationRange.min) + durationRange.min;
+
+  return {
+    name: NOTES[note],
+    octave,
+    midiNumber: midiNum,
+    velocity,
+    duration,
+  };
+}
+
+// Generate jungle symphony with multiple animal voices
+function generateJungleSymphony(weather: WeatherData | null): Note[] {
+  const animals: ("bird" | "monkey" | "frog" | "insect")[] = [
+    "bird",
+    "monkey",
+    "frog",
+    "insect",
+  ];
+  const numAnimals = Math.floor(Math.random() * 3) + 2; // 2-4 animals at once
+  const symphony: Note[] = [];
+
+  for (let i = 0; i < numAnimals; i++) {
+    const animalType = animals[Math.floor(Math.random() * animals.length)];
+    symphony.push(generateAnimalNote(animalType, weather));
+  }
+
+  return symphony;
+}
+
 // Occasionally change key, scale, or mode
 function maybeChangeMusicalContext(): void {
   const now = Date.now();
@@ -318,7 +397,60 @@ export function generateMidiEvent(
     };
   }
 
-  // Decide between note, chord, or counterpoint
+  // Jungle mode: generate animal symphony patterns
+  if (jungleModeEnabled) {
+    const eventType = Math.random();
+
+    if (eventType < 0.6) {
+      // Generate jungle symphony (multiple animals)
+      const symphonyNotes = generateJungleSymphony(weather);
+      return {
+        type: "counterpoint",
+        notes: symphonyNotes,
+        currentKey: NOTES[currentKey],
+        currentScale,
+      };
+    } else if (eventType < 0.8) {
+      // Generate single animal sound
+      const animals: ("bird" | "monkey" | "frog" | "insect")[] = [
+        "bird",
+        "monkey",
+        "frog",
+        "insect",
+      ];
+      const animalType = animals[Math.floor(Math.random() * animals.length)];
+      return {
+        type: "note",
+        note: generateAnimalNote(animalType, weather),
+        currentKey: NOTES[currentKey],
+        currentScale,
+      };
+    } else {
+      // Generate animal chorus (same type of animal)
+      const animals: ("bird" | "monkey" | "frog" | "insect")[] = [
+        "bird",
+        "monkey",
+        "frog",
+        "insect",
+      ];
+      const animalType = animals[Math.floor(Math.random() * animals.length)];
+      const chorusSize = Math.floor(Math.random() * 3) + 2; // 2-4 animals of same type
+      const chorusNotes: Note[] = [];
+
+      for (let i = 0; i < chorusSize; i++) {
+        chorusNotes.push(generateAnimalNote(animalType, weather));
+      }
+
+      return {
+        type: "chord",
+        notes: chorusNotes,
+        currentKey: NOTES[currentKey],
+        currentScale,
+      };
+    }
+  }
+
+  // Standard piano mode: Decide between note, chord, or counterpoint
   const eventType = Math.random();
 
   if (eventType < 0.5) {
@@ -369,4 +501,14 @@ export function generateMidiEvent(
       currentScale,
     };
   }
+}
+
+// Function to enable/disable jungle mode
+export function setJungleMode(enabled: boolean): void {
+  jungleModeEnabled = enabled;
+}
+
+// Function to get current jungle mode state
+export function getJungleMode(): boolean {
+  return jungleModeEnabled;
 }

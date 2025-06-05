@@ -155,6 +155,18 @@ h1 {
   background-color: var(--button-active);
 }
 
+.btn.jungle-btn.active {
+  background-color: #aa6600;
+  border-color: #ff9900;
+  color: #fff;
+  box-shadow: 0 0 15px rgba(255, 153, 0, 0.5);
+}
+
+.btn.jungle-btn.active:hover {
+  background-color: #cc7700;
+  box-shadow: 0 0 20px rgba(255, 153, 0, 0.7);
+}
+
 .btn.loading {
   animation: loading-pulse 1.2s infinite;
   cursor: wait;

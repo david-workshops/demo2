@@ -2,7 +2,11 @@ import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import path from "path";
-import { generateMidiEvent } from "./music-generator";
+import {
+  generateMidiEvent,
+  setJungleMode,
+  getJungleMode,
+} from "./music-generator";
 import { WeatherData } from "../shared/types";
 import dotenv from "dotenv";
 import { freepikService } from "./freepik-service";
@@ -286,6 +290,20 @@ io.on("connection", (socket) => {
     } else {
       console.log("No weather data available to send");
     }
+  });
+
+  // Handle jungle mode toggle
+  socket.on("set-jungle-mode", (enabled: boolean) => {
+    console.log(`Setting jungle mode to: ${enabled ? "ON" : "OFF"}`);
+    setJungleMode(enabled);
+    // Notify all clients about the jungle mode change
+    io.emit("jungle-mode-changed", enabled);
+  });
+
+  // Handle jungle mode status request
+  socket.on("get-jungle-mode", () => {
+    const jungleModeEnabled = getJungleMode();
+    socket.emit("jungle-mode-status", jungleModeEnabled);
   });
 });
 
