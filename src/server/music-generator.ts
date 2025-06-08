@@ -16,13 +16,13 @@ const SCALES: Record<Scale, number[]> = {
 };
 
 // State variables
-let currentKey = Math.floor(Math.random() * 12); // 0-11 for C through B
+let currentKey = 0; // C major (0 = C) for Taylor Swift style
 let currentScale: Scale = "major";
 let lastModeChangeTime = Date.now();
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let _noteCounter = 0;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-let density = 0.7; // Probability of generating a note vs. silence
+let density = 0.8; // Increased for more energetic feel (Taylor Swift style)
 
 // Apply weather influence to music parameters
 function applyWeatherInfluence(weather: WeatherData | null) {
@@ -121,9 +121,9 @@ function applyWeatherInfluence(weather: WeatherData | null) {
 }
 // Weather influence settings
 const defaultSettings = {
-  tempo: 100, // Base tempo (events per minute)
-  density: 0.7, // Probability of generating notes vs. silence
-  minOctave: 1, // Minimum octave
+  tempo: 130, // Increased for pop energy (Taylor Swift style)
+  density: 0.8, // Increased for more energetic feel
+  minOctave: 3, // Higher for brighter sound
   maxOctave: 7, // Maximum octave
   sustainProbability: 0.05, // Probability of using sustain pedal
   velocityRange: { min: 60, max: 100 }, // Velocity range for notes
@@ -237,17 +237,26 @@ function maybeChangeMusicalContext(): void {
     const changeType = Math.floor(Math.random() * 3);
 
     if (changeType === 0) {
-      // Change key
-      currentKey = Math.floor(Math.random() * 12);
+      // Change key - bias towards C major but allow some variation
+      currentKey = Math.random() < 0.6 ? 0 : Math.floor(Math.random() * 12);
     } else if (changeType === 1) {
-      // Change scale
-      const scaleNames = Object.keys(SCALES) as Scale[];
-      currentScale = scaleNames[Math.floor(Math.random() * scaleNames.length)];
+      // Change scale - bias heavily towards major scales
+      if (Math.random() < 0.8) {
+        currentScale = "major"; // 80% chance to stay in major
+      } else {
+        // 20% chance for other bright scales
+        const brightScales: Scale[] = ["major", "lydian", "mixolydian", "pentatonicMajor"];
+        currentScale = brightScales[Math.floor(Math.random() * brightScales.length)];
+      }
     } else {
-      // Change both
-      currentKey = Math.floor(Math.random() * 12);
-      const scaleNames = Object.keys(SCALES) as Scale[];
-      currentScale = scaleNames[Math.floor(Math.random() * scaleNames.length)];
+      // Change both - still bias towards C major and bright scales
+      currentKey = Math.random() < 0.6 ? 0 : Math.floor(Math.random() * 12);
+      if (Math.random() < 0.8) {
+        currentScale = "major";
+      } else {
+        const brightScales: Scale[] = ["major", "lydian", "mixolydian", "pentatonicMajor"];
+        currentScale = brightScales[Math.floor(Math.random() * brightScales.length)];
+      }
     }
 
     lastModeChangeTime = now;
