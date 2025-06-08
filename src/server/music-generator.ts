@@ -13,6 +13,7 @@ const SCALES: Record<Scale, number[]> = {
   pentatonicMajor: [0, 2, 4, 7, 9],
   pentatonicMinor: [0, 3, 5, 7, 10],
   wholeTone: [0, 2, 4, 6, 8, 10],
+  puppyFire: [0, 2, 4, 6, 7, 9, 11], // Bright lydian-like scale with raised 4th for sparkly, playful feel
 };
 
 // State variables
@@ -23,6 +24,8 @@ let lastModeChangeTime = Date.now();
 let _noteCounter = 0;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let density = 0.7; // Probability of generating a note vs. silence
+let puppyFireModeActive = false;
+let puppyFireModeStartTime = 0;
 
 // Apply weather influence to music parameters
 function applyWeatherInfluence(weather: WeatherData | null) {
@@ -119,6 +122,37 @@ function applyWeatherInfluence(weather: WeatherData | null) {
 
   return settings;
 }
+
+// Apply puppy fire theme influence to music parameters
+function applyPuppyFireTheme() {
+  // Puppy fire theme: warm, playful, energetic characteristics
+  const settings = { ...defaultSettings };
+
+  // Set to puppyFire scale for bright, sparkly sound
+  currentScale = "puppyFire";
+
+  // Faster tempo for playful energy
+  settings.tempo = 120;
+
+  // Higher register for bright, cute puppy-like sounds
+  settings.minOctave = 3;
+  settings.maxOctave = 7;
+
+  // Medium-short note durations for bouncy, playful feeling
+  settings.noteDurationRange = { min: 300, max: 1500 };
+
+  // Medium-bright velocity for warmth without being harsh
+  settings.velocityRange = { min: 65, max: 105 };
+
+  // Higher density for more active, playful texture
+  settings.density = 0.8;
+
+  // Less sustain for more defined, crisp puppy-like sounds
+  settings.sustainProbability = 0.02;
+
+  return settings;
+}
+
 // Weather influence settings
 const defaultSettings = {
   tempo: 100, // Base tempo (events per minute)
@@ -140,7 +174,9 @@ function generateRandomNote(
   weather: WeatherData | null,
   customOctaveRange?: { min: number; max: number },
 ): Note {
-  const settings = applyWeatherInfluence(weather);
+  const settings = puppyFireModeActive
+    ? applyPuppyFireTheme()
+    : applyWeatherInfluence(weather);
   const scaleNotes = getScaleNotes();
   const noteIndex = Math.floor(Math.random() * scaleNotes.length);
   const note = scaleNotes[noteIndex];
@@ -180,7 +216,9 @@ function generateRandomNote(
 
 // Function to generate chords in the current key and scale
 function generateChord(weather: WeatherData | null, numNotes = 3): Note[] {
-  const settings = applyWeatherInfluence(weather);
+  const settings = puppyFireModeActive
+    ? applyPuppyFireTheme()
+    : applyWeatherInfluence(weather);
   const scaleNotes = getScaleNotes();
   const rootIndex = Math.floor(Math.random() * scaleNotes.length);
   const rootNote = scaleNotes[rootIndex];
@@ -231,23 +269,41 @@ function generateChord(weather: WeatherData | null, numNotes = 3): Note[] {
 function maybeChangeMusicalContext(): void {
   const now = Date.now();
 
+  // Check if we should exit puppy fire mode (after 30-60 seconds)
+  if (
+    puppyFireModeActive &&
+    now - puppyFireModeStartTime > 30000 + Math.random() * 30000
+  ) {
+    puppyFireModeActive = false;
+  }
+
   // Change approximately every 3-5 minutes
   if (now - lastModeChangeTime > 3 * 60 * 1000 && Math.random() < 0.01) {
     // 1% chance per check when we're past the minimum time
-    const changeType = Math.floor(Math.random() * 3);
+    const changeType = Math.floor(Math.random() * 4); // Now includes puppy fire mode
 
     if (changeType === 0) {
       // Change key
       currentKey = Math.floor(Math.random() * 12);
     } else if (changeType === 1) {
       // Change scale
-      const scaleNames = Object.keys(SCALES) as Scale[];
+      const scaleNames = Object.keys(SCALES).filter(
+        (s) => s !== "puppyFire",
+      ) as Scale[];
+      currentScale = scaleNames[Math.floor(Math.random() * scaleNames.length)];
+    } else if (changeType === 2) {
+      // Change both key and scale
+      currentKey = Math.floor(Math.random() * 12);
+      const scaleNames = Object.keys(SCALES).filter(
+        (s) => s !== "puppyFire",
+      ) as Scale[];
       currentScale = scaleNames[Math.floor(Math.random() * scaleNames.length)];
     } else {
-      // Change both
-      currentKey = Math.floor(Math.random() * 12);
-      const scaleNames = Object.keys(SCALES) as Scale[];
-      currentScale = scaleNames[Math.floor(Math.random() * scaleNames.length)];
+      // Activate puppy fire mode (5% chance when changing context)
+      if (!puppyFireModeActive && Math.random() < 0.05) {
+        puppyFireModeActive = true;
+        puppyFireModeStartTime = now;
+      }
     }
 
     lastModeChangeTime = now;
@@ -260,7 +316,9 @@ let sustainPedalEnabled = true;
 
 // Decide which pedal to use
 function decidePedal(weather: WeatherData | null): Pedal | null {
-  const settings = applyWeatherInfluence(weather);
+  const settings = puppyFireModeActive
+    ? applyPuppyFireTheme()
+    : applyWeatherInfluence(weather);
   const rand = Math.random();
   const now = Date.now();
 
@@ -297,7 +355,10 @@ export function generateMidiEvent(
   _noteCounter++;
   maybeChangeMusicalContext();
 
-  const settings = applyWeatherInfluence(weather);
+  // Use puppy fire theme if active, otherwise use weather influence
+  const settings = puppyFireModeActive
+    ? applyPuppyFireTheme()
+    : applyWeatherInfluence(weather);
 
   // Randomly introduce silence based on density setting
   if (Math.random() > settings.density) {
@@ -344,8 +405,10 @@ export function generateMidiEvent(
     const notes: Note[] = [];
 
     for (let i = 0; i < numVoices; i++) {
-      // Assign each voice to a different register, influenced by weather
-      const settings = applyWeatherInfluence(weather);
+      // Assign each voice to a different register, influenced by weather or puppy fire theme
+      const settings = puppyFireModeActive
+        ? applyPuppyFireTheme()
+        : applyWeatherInfluence(weather);
       const range = Math.min(settings.maxOctave - settings.minOctave, 5);
       const segment = range / numVoices;
       const minOctave = Math.max(
@@ -369,4 +432,9 @@ export function generateMidiEvent(
       currentScale,
     };
   }
+}
+
+// Export function to check if puppy fire mode is currently active
+export function isPuppyFireModeActive(): boolean {
+  return puppyFireModeActive;
 }

@@ -10,7 +10,8 @@ export type Scale =
   | "locrian"
   | "pentatonicMajor"
   | "pentatonicMinor"
-  | "wholeTone";
+  | "wholeTone"
+  | "puppyFire";
 
 export interface Note {
   name: string; // Note name (C, C#, etc.)
