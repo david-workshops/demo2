@@ -57,4 +57,44 @@ describe("Music Generator", () => {
     // We should observe at least 3 different event types
     expect(eventTypes.size).toBeGreaterThanOrEqual(3);
   });
+
+  it("should default to C major for Taylor Swift style", () => {
+    // Generate multiple events to check initial key and scale
+    const events = [];
+    for (let i = 0; i < 20; i++) {
+      const event = generateMidiEvent();
+      events.push(event);
+    }
+
+    // Find events that have key and scale information
+    const musicalEvents = events.filter(
+      (event) => event.type === "note" || event.type === "chord" || event.type === "counterpoint"
+    );
+
+    // Should have some musical events
+    expect(musicalEvents.length).toBeGreaterThan(0);
+
+    // Most events should be in C major (initial setting)
+    const cMajorEvents = musicalEvents.filter(
+      (event) => "currentKey" in event && event.currentKey === "C" && event.currentScale === "major"
+    );
+    expect(cMajorEvents.length).toBeGreaterThan(0);
+  });
+
+  it("should generate notes in higher octaves for brighter sound", () => {
+    const events = [];
+    for (let i = 0; i < 50; i++) {
+      const event = generateMidiEvent();
+      if (event.type === "note") {
+        events.push(event);
+      }
+    }
+
+    // Should have some note events
+    expect(events.length).toBeGreaterThan(0);
+
+    // Most notes should be in octave 3 or higher for brighter sound
+    const brighterNotes = events.filter((event) => event.note.octave >= 3);
+    expect(brighterNotes.length / events.length).toBeGreaterThan(0.8); // At least 80%
+  });
 });
