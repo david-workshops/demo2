@@ -1,4 +1,5 @@
 import { WeatherData } from "../shared/types";
+import { isPuppyFireModeActive } from "./music-generator";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
@@ -151,36 +152,62 @@ export class FreepikService {
 
   // Generate a prompt based on current music and weather
   public generatePrompt(): string {
-    // Start with a base prompt for a minimalist abstract sea of color
-    let prompt = "Minimalist abstract sea of color";
+    // Check if puppy fire mode is active
+    const isPuppyFireActive = isPuppyFireModeActive();
+
+    // Start with a base prompt - different for puppy fire mode
+    let prompt = isPuppyFireActive
+      ? "Warm glowing abstract sea of orange and golden colors with playful sparkles, cute puppy silhouettes dancing with flames"
+      : "Minimalist abstract sea of color";
 
     // Add color influence based on notes being played
     if (this.activeNotes.count > 0) {
-      // Add color variation based on note range
-      if (this.activeNotes.highestNote > 80) {
-        // Higher notes
-        prompt += ", with bright yellow and white colors in the upper areas";
-      } else if (this.activeNotes.lowestNote < 48) {
-        // Lower notes
-        prompt += ", with deep blue and purple hues in the lower areas";
+      if (isPuppyFireActive) {
+        // Puppy fire mode: warm, bright colors with fire/puppy themes
+        if (this.activeNotes.highestNote > 80) {
+          prompt +=
+            ", with bright golden flames and puppy ears silhouettes in the upper areas";
+        } else if (this.activeNotes.lowestNote < 48) {
+          prompt +=
+            ", with warm ember glows and cute paw prints in the lower areas";
+        } else {
+          prompt +=
+            ", with cozy orange flames and playful puppy shapes throughout";
+        }
       } else {
-        // Middle range
-        prompt += ", with balanced green and cyan tones throughout";
+        // Normal mode: existing logic
+        // Add color variation based on note range
+        if (this.activeNotes.highestNote > 80) {
+          // Higher notes
+          prompt += ", with bright yellow and white colors in the upper areas";
+        } else if (this.activeNotes.lowestNote < 48) {
+          // Lower notes
+          prompt += ", with deep blue and purple hues in the lower areas";
+        } else {
+          // Middle range
+          prompt += ", with balanced green and cyan tones throughout";
+        }
       }
 
       // Add texture based on number of notes
       if (this.activeNotes.count > 4) {
-        prompt += ", complex layered textures";
+        prompt += isPuppyFireActive
+          ? ", with dancing flames and multiple playful puppy silhouettes"
+          : ", complex layered textures";
       } else if (this.activeNotes.count > 0) {
-        prompt += ", simple flowing textures";
+        prompt += isPuppyFireActive
+          ? ", with gentle flickering flames and a single cute puppy shape"
+          : ", simple flowing textures";
       }
     } else {
       // Default when no notes are playing
-      prompt += ", calm and serene, minimal texture";
+      prompt += isPuppyFireActive
+        ? ", with warm glowing embers and a sleeping puppy silhouette"
+        : ", calm and serene, minimal texture";
     }
 
-    // Add weather influence if available
-    if (this.weatherData) {
+    // Add weather influence if available (but not in puppy fire mode)
+    if (this.weatherData && !isPuppyFireActive) {
       // Temperature influence
       if (this.weatherData.temperature < 0) {
         prompt += ", cold blue and white tones";
@@ -215,8 +242,9 @@ export class FreepikService {
     }
 
     // Add style qualifiers to ensure minimalist abstraction
-    prompt +=
-      ", ultra minimalist, color field painting style, rothko-inspired, digital art";
+    prompt += isPuppyFireActive
+      ? ", warm digital art, cozy and playful style, cute and endearing"
+      : ", ultra minimalist, color field painting style, rothko-inspired, digital art";
 
     this.lastPrompt = prompt;
     return prompt;
