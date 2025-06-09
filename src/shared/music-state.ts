@@ -87,11 +87,13 @@ class MusicStateService {
 
       case "chord":
       case "counterpoint":
+      case "birdTweet":
+      case "leafRustle":
         // Update key and scale
         this.currentKey = event.currentKey;
         this.currentScale = event.currentScale;
 
-        // Add all notes in the chord or counterpoint
+        // Add all notes in the chord, counterpoint, bird tweet, or leaf rustle
         event.notes.forEach((note) => {
           // Add timestamp to the note for tracking
           note._startTime = Date.now();
