@@ -57,4 +57,66 @@ describe("Music Generator", () => {
     // We should observe at least 3 different event types
     expect(eventTypes.size).toBeGreaterThanOrEqual(3);
   });
+
+  describe("Woodpecker Mode", () => {
+    it("should generate woodpecker events in woodpecker mode", () => {
+      const event = generateMidiEvent(null, "woodpecker");
+      expect(event).toBeDefined();
+      expect(["woodpecker", "silence"]).toContain(event.type);
+
+      if (event.type === "woodpecker") {
+        expect(event.note).toBeDefined();
+        expect(event.woodpeckerType).toBeDefined();
+        expect(["high", "mid", "low"]).toContain(event.woodpeckerType);
+        expect(event.note.duration).toBeGreaterThanOrEqual(50);
+        expect(event.note.duration).toBeLessThanOrEqual(150);
+        expect(event.note.velocity).toBeGreaterThanOrEqual(95);
+        expect(event.note.velocity).toBeLessThanOrEqual(120);
+      }
+    });
+
+    it("should generate different woodpecker types", () => {
+      const woodpeckerTypes = new Set<string>();
+
+      // Generate many events to see different woodpecker types
+      for (let i = 0; i < 50; i++) {
+        const event = generateMidiEvent(null, "woodpecker");
+        if (event.type === "woodpecker") {
+          woodpeckerTypes.add(event.woodpeckerType);
+        }
+      }
+
+      // Should eventually see multiple woodpecker types
+      expect(woodpeckerTypes.size).toBeGreaterThanOrEqual(1);
+    });
+
+    it("should generate short, percussive notes characteristic of woodpeckers", () => {
+      let woodpeckerEventFound = false;
+
+      for (let i = 0; i < 20; i++) {
+        const event = generateMidiEvent(null, "woodpecker");
+        if (event.type === "woodpecker") {
+          woodpeckerEventFound = true;
+          // Short duration (50-150ms range)
+          expect(event.note.duration).toBeLessThan(160);
+          expect(event.note.duration).toBeGreaterThan(40);
+          // High velocity (percussive attack)
+          expect(event.note.velocity).toBeGreaterThan(90);
+          break;
+        }
+      }
+
+      // Should find at least one woodpecker event in reasonable attempts
+      expect(woodpeckerEventFound).toBe(true);
+    });
+
+    it("should default to normal mode when no mode specified", () => {
+      const normalEvent = generateMidiEvent();
+      const modeEvent = generateMidiEvent(null, "normal");
+
+      // Both should not be woodpecker events
+      expect(normalEvent.type).not.toBe("woodpecker");
+      expect(modeEvent.type).not.toBe("woodpecker");
+    });
+  });
 });

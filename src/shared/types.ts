@@ -1,5 +1,7 @@
 // Types for musical concepts
 
+export type MusicMode = "normal" | "woodpecker";
+
 export type Scale =
   | "major"
   | "minor"
@@ -18,6 +20,14 @@ export interface Note {
   midiNumber: number; // MIDI note number
   velocity: number; // How hard the note is played (0-127)
   duration: number; // Duration in milliseconds
+}
+
+export interface WoodpeckerPattern {
+  type: "high" | "mid" | "low"; // Pitch range type
+  baseNote: number; // Base MIDI note for this woodpecker
+  rhythm: number[]; // Pattern of note durations in ms
+  pausePattern: number[]; // Pattern of pause durations in ms
+  velocity: number; // Consistent velocity for this woodpecker type
 }
 
 export interface Pedal {
@@ -44,6 +54,7 @@ export type MidiEvent =
     }
   | { type: "pedal"; pedal: Pedal }
   | { type: "silence"; duration: number }
+  | { type: "woodpecker"; note: Note; woodpeckerType: "high" | "mid" | "low" }
   | { type: "allNotesOff" };
 
 // Extended MIDI for disklavier
