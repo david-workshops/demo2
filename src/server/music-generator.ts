@@ -1,4 +1,12 @@
-import { MidiEvent, Note, Scale, Pedal, WeatherData } from "../shared/types";
+import {
+  MidiEvent,
+  Note,
+  Scale,
+  Pedal,
+  WeatherData,
+  MusicMode,
+  WoodpeckerPattern,
+} from "../shared/types";
 
 // Music theory constants
 const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -290,11 +298,117 @@ function decidePedal(weather: WeatherData | null): Pedal | null {
   return null;
 }
 
+// Woodpecker sound generation
+const WOODPECKER_PATTERNS: Record<"high" | "mid" | "low", WoodpeckerPattern> = {
+  high: {
+    type: "high",
+    baseNote: 96, // C7 - high pitched woodpecker
+    rhythm: [75, 60, 80, 65], // Short, sharp staccato notes (50-150ms)
+    pausePattern: [200, 150, 300, 250], // Natural pauses between pecks
+    velocity: 110, // High velocity for percussive attack
+  },
+  mid: {
+    type: "mid",
+    baseNote: 84, // C6 - mid range woodpecker
+    rhythm: [100, 85, 95, 90],
+    pausePattern: [350, 400, 250, 300],
+    velocity: 105,
+  },
+  low: {
+    type: "low",
+    baseNote: 72, // C5 - lower pitched woodpecker
+    rhythm: [120, 110, 130, 115],
+    pausePattern: [500, 450, 600, 550],
+    velocity: 100,
+  },
+};
+
+// State for woodpecker patterns
+let woodpeckerStates = {
+  high: { rhythmIndex: 0, pauseIndex: 0, lastEventTime: 0 },
+  mid: { rhythmIndex: 0, pauseIndex: 0, lastEventTime: 0 },
+  low: { rhythmIndex: 0, pauseIndex: 0, lastEventTime: 0 },
+};
+
+function generateWoodpeckerEvent(): MidiEvent {
+  const now = Date.now();
+
+  // Choose which woodpecker should peck based on their individual timing
+  const activeWoodpeckers: Array<"high" | "mid" | "low"> = [];
+
+  for (const type of ["high", "mid", "low"] as const) {
+    const state = woodpeckerStates[type];
+    const pattern = WOODPECKER_PATTERNS[type];
+    const timeSinceLastEvent = now - state.lastEventTime;
+    const expectedPause = pattern.pausePattern[state.pauseIndex];
+
+    // Check if enough time has passed for this woodpecker to peck again
+    // For the first event, lastEventTime will be 0, so allow it
+    if (state.lastEventTime === 0 || timeSinceLastEvent >= expectedPause) {
+      activeWoodpeckers.push(type);
+    }
+  }
+
+  // If no woodpecker is ready, pick one randomly (sparse forest environment)
+  if (activeWoodpeckers.length === 0) {
+    // 30% chance of generating silence, 70% chance of forcing a woodpecker sound
+    if (Math.random() < 0.3) {
+      return {
+        type: "silence",
+        duration: Math.random() * 200 + 100, // 100-300ms of forest silence
+      };
+    } else {
+      // Force one woodpecker to be active for sparse but present sounds
+      activeWoodpeckers.push(
+        ["high", "mid", "low"][Math.floor(Math.random() * 3)] as
+          | "high"
+          | "mid"
+          | "low",
+      );
+    }
+  }
+
+  // Choose one of the ready woodpeckers (prefer variety)
+  const chosenType =
+    activeWoodpeckers[Math.floor(Math.random() * activeWoodpeckers.length)];
+  const pattern = WOODPECKER_PATTERNS[chosenType];
+  const state = woodpeckerStates[chosenType];
+
+  // Generate the woodpecker note
+  const duration = pattern.rhythm[state.rhythmIndex];
+  const note: Note = {
+    name: NOTES[pattern.baseNote % 12],
+    octave: Math.floor(pattern.baseNote / 12) - 1,
+    midiNumber: pattern.baseNote,
+    velocity: pattern.velocity + Math.floor(Math.random() * 10) - 5, // Slight velocity variation
+    duration,
+  };
+
+  // Update state for this woodpecker
+  state.rhythmIndex = (state.rhythmIndex + 1) % pattern.rhythm.length;
+  state.pauseIndex = (state.pauseIndex + 1) % pattern.pausePattern.length;
+  state.lastEventTime = now;
+
+  return {
+    type: "woodpecker",
+    note,
+    woodpeckerType: chosenType,
+  };
+}
+
 // Main function to generate MIDI events
 export function generateMidiEvent(
   weather: WeatherData | null = null,
+  mode: MusicMode = "normal",
 ): MidiEvent {
   _noteCounter++;
+
+  // Handle woodpecker mode
+  if (mode === "woodpecker") {
+    return generateWoodpeckerEvent();
+  }
+
+  // Normal music generation mode
   maybeChangeMusicalContext();
 
   const settings = applyWeatherInfluence(weather);
