@@ -214,10 +214,10 @@ function updateWeatherImpactDisplay(weather: WeatherData) {
     impact.push("Slower tempo, lower register");
   } else if (weather.temperature < 10) {
     impact.push("Minor scales, softer dynamics");
-  } else if (weather.temperature > 25) {
-    impact.push("Brighter scales, higher register");
   } else if (weather.temperature > 30) {
     impact.push("Faster tempo, more activity");
+  } else if (weather.temperature > 25) {
+    impact.push("Brighter scales, higher register");
   }
 
   // Weather condition impact
