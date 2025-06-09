@@ -6,6 +6,7 @@ import prettierConfig from "eslint-config-prettier";
 export default [
   {
     files: ["**/*.{js,jsx,ts,tsx}"],
+    ignores: ["dist/**", "node_modules/**", "cypress/**"],
     languageOptions: {
       parser: typescriptParser,
       ecmaVersion: 2020,

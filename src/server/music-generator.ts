@@ -178,7 +178,95 @@ function generateRandomNote(
   };
 }
 
-// Function to generate chords in the current key and scale
+// Function to generate bird tweet sounds (quick, high-pitched chirping)
+function generateBirdTweet(weather: WeatherData | null): Note[] {
+  const settings = applyWeatherInfluence(weather);
+  const scaleNotes = getScaleNotes();
+  const notes: Note[] = [];
+
+  // Bird tweets are quick, high-pitched sequences of 2-4 notes
+  const numNotes = Math.floor(Math.random() * 3) + 2; // 2-4 notes
+
+  // Use high octave range for bird-like chirping
+  const birdOctaveRange = {
+    min: Math.max(5, settings.minOctave + 3), // At least octave 5
+    max: Math.min(8, settings.maxOctave + 1), // Up to octave 8
+  };
+
+  for (let i = 0; i < numNotes; i++) {
+    const noteIndex = Math.floor(Math.random() * scaleNotes.length);
+    const note = scaleNotes[noteIndex];
+
+    const octave =
+      Math.floor(
+        Math.random() * (birdOctaveRange.max - birdOctaveRange.min + 1),
+      ) + birdOctaveRange.min;
+
+    const midiNum = note + octave * 12 + 12;
+
+    // Bird tweets are relatively soft and quick
+    const velocity = Math.floor(Math.random() * 40) + 50; // 50-90 velocity
+    const duration = Math.random() * 150 + 80; // 80-230ms duration (very quick)
+
+    notes.push({
+      name: NOTES[note],
+      octave,
+      midiNumber: midiNum,
+      velocity,
+      duration,
+    });
+  }
+
+  return notes;
+}
+
+// Function to generate leaf rustle sounds (soft, textural cluster sounds)
+function generateLeafRustle(weather: WeatherData | null): Note[] {
+  const settings = applyWeatherInfluence(weather);
+  const scaleNotes = getScaleNotes();
+  const notes: Note[] = [];
+
+  // Leaf rustles are clusters of 3-6 soft notes
+  const numNotes = Math.floor(Math.random() * 4) + 3; // 3-6 notes
+
+  // Use middle to low-middle register for textural sounds
+  const rustleOctaveRange = {
+    min: Math.max(2, settings.minOctave),
+    max: Math.min(5, settings.maxOctave - 1),
+  };
+
+  // Pick a base note and create a cluster around it
+  const baseNoteIndex = Math.floor(Math.random() * scaleNotes.length);
+
+  for (let i = 0; i < numNotes; i++) {
+    // Create notes clustered around the base note
+    const noteIndex =
+      (baseNoteIndex + Math.floor(Math.random() * 5) - 2 + scaleNotes.length) %
+      scaleNotes.length;
+    const note = scaleNotes[noteIndex];
+
+    const octave =
+      Math.floor(
+        Math.random() * (rustleOctaveRange.max - rustleOctaveRange.min + 1),
+      ) + rustleOctaveRange.min;
+
+    const midiNum = note + octave * 12 + 12;
+
+    // Leaf rustles are very soft and have varying durations
+    const velocity = Math.floor(Math.random() * 35) + 25; // 25-60 velocity (very soft)
+    const duration = Math.random() * 800 + 300; // 300-1100ms duration (varying)
+
+    notes.push({
+      name: NOTES[note],
+      octave,
+      midiNumber: midiNum,
+      velocity,
+      duration,
+    });
+  }
+
+  return notes;
+}
 function generateChord(weather: WeatherData | null, numNotes = 3): Note[] {
   const settings = applyWeatherInfluence(weather);
   const scaleNotes = getScaleNotes();
@@ -318,10 +406,10 @@ export function generateMidiEvent(
     };
   }
 
-  // Decide between note, chord, or counterpoint
+  // Decide between note, chord, counterpoint, bird tweet, or leaf rustle
   const eventType = Math.random();
 
-  if (eventType < 0.5) {
+  if (eventType < 0.4) {
     // Generate a single note
     return {
       type: "note",
@@ -329,7 +417,7 @@ export function generateMidiEvent(
       currentKey: NOTES[currentKey],
       currentScale,
     };
-  } else if (eventType < 0.8) {
+  } else if (eventType < 0.65) {
     // Generate a chord
     const chordSize = Math.floor(Math.random() * 3) + 3; // 3-5 notes
     return {
@@ -338,7 +426,7 @@ export function generateMidiEvent(
       currentKey: NOTES[currentKey],
       currentScale,
     };
-  } else {
+  } else if (eventType < 0.85) {
     // Generate counterpoint (2-4 notes across different registers)
     const numVoices = Math.floor(Math.random() * 3) + 2; // 2-4 voices
     const notes: Note[] = [];
@@ -365,6 +453,22 @@ export function generateMidiEvent(
     return {
       type: "counterpoint",
       notes,
+      currentKey: NOTES[currentKey],
+      currentScale,
+    };
+  } else if (eventType < 0.92) {
+    // Generate bird tweet (small probability for natural texture)
+    return {
+      type: "birdTweet",
+      notes: generateBirdTweet(weather),
+      currentKey: NOTES[currentKey],
+      currentScale,
+    };
+  } else {
+    // Generate leaf rustle (small probability for natural texture)
+    return {
+      type: "leafRustle",
+      notes: generateLeafRustle(weather),
       currentKey: NOTES[currentKey],
       currentScale,
     };
