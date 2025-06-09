@@ -17,12 +17,30 @@ const SCALES: Record<Scale, number[]> = {
 
 // State variables
 let currentKey = Math.floor(Math.random() * 12); // 0-11 for C through B
-let currentScale: Scale = "major";
+let currentScale: Scale = "minor"; // Start with minor scale for Frank Ocean feel
 let lastModeChangeTime = Date.now();
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let _noteCounter = 0;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-let density = 0.7; // Probability of generating a note vs. silence
+let density = 0.4; // Frank Ocean style density
+
+// Frank Ocean style scale selection with bias toward minor and modal harmonies
+function selectFrankOceanScale(): Scale {
+  const rand = Math.random();
+
+  // Heavy bias toward minor and dorian (Frank Ocean's preferred tonalities)
+  if (rand < 0.4) {
+    return "minor";
+  } else if (rand < 0.7) {
+    return "dorian"; // Especially prominent in "White Ferrari"
+  } else if (rand < 0.85) {
+    return "pentatonicMinor"; // Simplified, contemplative
+  } else if (rand < 0.95) {
+    return "phrygian"; // Dark, introspective
+  } else {
+    return "major"; // Occasional brightness for contrast
+  }
+}
 
 // Apply weather influence to music parameters
 function applyWeatherInfluence(weather: WeatherData | null) {
@@ -119,15 +137,15 @@ function applyWeatherInfluence(weather: WeatherData | null) {
 
   return settings;
 }
-// Weather influence settings
+// Weather influence settings - Frank Ocean "White Ferrari" inspired defaults
 const defaultSettings = {
-  tempo: 100, // Base tempo (events per minute)
-  density: 0.7, // Probability of generating notes vs. silence
-  minOctave: 1, // Minimum octave
-  maxOctave: 7, // Maximum octave
-  sustainProbability: 0.05, // Probability of using sustain pedal
-  velocityRange: { min: 60, max: 100 }, // Velocity range for notes
-  noteDurationRange: { min: 500, max: 2500 }, // Duration range in ms
+  tempo: 65, // Slower tempo for contemplative feel (Frank Ocean style: 60-70 BPM)
+  density: 0.4, // Reduced density for sparse, intimate atmosphere
+  minOctave: 2, // Focus on lower-mid register for warmth
+  maxOctave: 5, // Constrained to mid register, avoiding extreme highs
+  sustainProbability: 0.18, // Increased sustain for dreamy, atmospheric sound
+  velocityRange: { min: 35, max: 75 }, // Softer, more intimate velocity range
+  noteDurationRange: { min: 800, max: 4000 }, // Longer notes for contemplative pacing
 };
 
 // Helper function to get notes in the current key and scale
@@ -227,7 +245,7 @@ function generateChord(weather: WeatherData | null, numNotes = 3): Note[] {
   return chordNotes;
 }
 
-// Occasionally change key, scale, or mode
+// Occasionally change key, scale, or mode with Frank Ocean bias
 function maybeChangeMusicalContext(): void {
   const now = Date.now();
 
@@ -240,14 +258,12 @@ function maybeChangeMusicalContext(): void {
       // Change key
       currentKey = Math.floor(Math.random() * 12);
     } else if (changeType === 1) {
-      // Change scale
-      const scaleNames = Object.keys(SCALES) as Scale[];
-      currentScale = scaleNames[Math.floor(Math.random() * scaleNames.length)];
+      // Change scale using Frank Ocean bias
+      currentScale = selectFrankOceanScale();
     } else {
       // Change both
       currentKey = Math.floor(Math.random() * 12);
-      const scaleNames = Object.keys(SCALES) as Scale[];
-      currentScale = scaleNames[Math.floor(Math.random() * scaleNames.length)];
+      currentScale = selectFrankOceanScale();
     }
 
     lastModeChangeTime = now;
@@ -318,20 +334,20 @@ export function generateMidiEvent(
     };
   }
 
-  // Decide between note, chord, or counterpoint
+  // Decide between note, chord, or counterpoint - Frank Ocean style favors single notes
   const eventType = Math.random();
 
-  if (eventType < 0.5) {
-    // Generate a single note
+  if (eventType < 0.75) {
+    // Generate a single note (increased from 0.5 for Frank Ocean's sparse, contemplative style)
     return {
       type: "note",
       note: generateRandomNote(weather),
       currentKey: NOTES[currentKey],
       currentScale,
     };
-  } else if (eventType < 0.8) {
-    // Generate a chord
-    const chordSize = Math.floor(Math.random() * 3) + 3; // 3-5 notes
+  } else if (eventType < 0.9) {
+    // Generate a chord (reduced probability for more intimate feel)
+    const chordSize = Math.floor(Math.random() * 2) + 2; // 2-3 notes (smaller chords)
     return {
       type: "chord",
       notes: generateChord(weather, chordSize),
@@ -339,14 +355,14 @@ export function generateMidiEvent(
       currentScale,
     };
   } else {
-    // Generate counterpoint (2-4 notes across different registers)
-    const numVoices = Math.floor(Math.random() * 3) + 2; // 2-4 voices
+    // Generate counterpoint (minimal use for sparse arrangement)
+    const numVoices = Math.floor(Math.random() * 2) + 2; // 2-3 voices max
     const notes: Note[] = [];
 
     for (let i = 0; i < numVoices; i++) {
       // Assign each voice to a different register, influenced by weather
       const settings = applyWeatherInfluence(weather);
-      const range = Math.min(settings.maxOctave - settings.minOctave, 5);
+      const range = Math.min(settings.maxOctave - settings.minOctave, 3); // Constrained range
       const segment = range / numVoices;
       const minOctave = Math.max(
         settings.minOctave,
