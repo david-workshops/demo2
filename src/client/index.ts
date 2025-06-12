@@ -1,5 +1,6 @@
 import { MusicStateEvent, musicState } from "../shared/music-state";
 import { Note, WeatherData } from "../shared/types";
+import { StreetSounds } from "./street-sounds";
 
 // Use the shared music state service
 const socket = musicState.getSocket();
@@ -30,12 +31,15 @@ const weatherInfoDisplay = document.getElementById(
 const weatherImpactDisplay = document.getElementById(
   "weather-impact",
 ) as HTMLElement;
+const streetSoundsToggle = document.getElementById("street-sounds-toggle") as HTMLButtonElement;
+const streetSoundsVolume = document.getElementById("street-sounds-volume") as HTMLInputElement;
 const consoleOutput = document.getElementById("console-output") as HTMLElement;
 
 // AudioContext and MIDI
 let audioContext: AudioContext | null = null;
 let gainNode: GainNode | null = null;
 let midiOutput: WebMidi.MIDIOutput | null = null;
+let streetSounds: StreetSounds | null = null;
 const activeNotes: Map<
   number,
   { oscillator: OscillatorNode; gainNode: GainNode; endTime: number }
@@ -55,6 +59,10 @@ function initAudio() {
     gainNode = audioContext.createGain();
     gainNode.gain.value = 0.5;
     gainNode.connect(audioContext.destination);
+    
+    // Initialize street sounds
+    streetSounds = new StreetSounds(audioContext);
+    
     logToConsole("Audio initialized");
   }
 }
@@ -381,6 +389,11 @@ function stopAllNotes() {
     activeNotes.clear();
   }
 
+  // Stop street sounds
+  if (streetSounds) {
+    streetSounds.stop();
+  }
+
   // Stop MIDI notes
   if (midiOutput) {
     // Send All Notes Off message
@@ -590,6 +603,11 @@ musicState.subscribe((event: MusicStateEvent) => {
       const weatherData = musicState.getWeatherData();
       if (weatherData) {
         updateWeatherDisplay(weatherData);
+        
+        // Trigger weather-influenced street sounds
+        if (streetSounds) {
+          streetSounds.triggerWeatherInfluencedSound(weatherData.weatherCode, weatherData.temperature);
+        }
       }
       break;
 
@@ -637,10 +655,24 @@ playToggleButton.addEventListener("click", async () => {
       initMidi().then((success) => {
         if (success) {
           musicState.start();
+          
+          // Start street sounds if enabled
+          if (streetSounds && streetSoundsToggle && streetSoundsToggle.textContent === "ON") {
+            streetSounds.start();
+            logToConsole("Street sounds started");
+          }
+          
           logToConsole("Starting MIDI stream - MIDI output");
         } else {
           outputSelect.value = "browser";
           musicState.start();
+          
+          // Start street sounds if enabled
+          if (streetSounds && streetSoundsToggle && streetSoundsToggle.textContent === "ON") {
+            streetSounds.start();
+            logToConsole("Street sounds started");
+          }
+          
           logToConsole("MIDI not available, falling back to browser audio");
         }
 
@@ -653,6 +685,13 @@ playToggleButton.addEventListener("click", async () => {
       });
     } else {
       musicState.start();
+      
+      // Start street sounds if enabled
+      if (streetSounds && streetSoundsToggle && streetSoundsToggle.textContent === "ON") {
+        streetSounds.start();
+        logToConsole("Street sounds started");
+      }
+      
       logToConsole("Starting MIDI stream - Browser audio");
 
       // Change button text and aria-label after starting
@@ -682,6 +721,38 @@ outputSelect.addEventListener("change", () => {
       }
     });
   }
+});
+
+// Street sounds toggle event handler
+streetSoundsToggle?.addEventListener("click", () => {
+  if (!streetSounds) return;
+  
+  const currentState = streetSoundsToggle.textContent;
+  
+  if (currentState === "OFF") {
+    streetSoundsToggle.textContent = "ON";
+    streetSoundsToggle.setAttribute("aria-label", "Disable street sounds");
+    
+    // Start street sounds if piano is playing
+    if (playToggleButton.textContent?.trim() === "PAUSE") {
+      streetSounds.start();
+      logToConsole("Street sounds enabled");
+    }
+  } else {
+    streetSoundsToggle.textContent = "OFF";
+    streetSoundsToggle.setAttribute("aria-label", "Enable street sounds");
+    streetSounds.stop();
+    logToConsole("Street sounds disabled");
+  }
+});
+
+// Street sounds volume control
+streetSoundsVolume?.addEventListener("input", () => {
+  if (!streetSounds) return;
+  
+  const volume = parseFloat(streetSoundsVolume.value);
+  streetSounds.setVolume(volume);
+  logToConsole(`Street sounds volume: ${Math.round(volume * 100)}%`);
 });
 
 // Cleanup function
