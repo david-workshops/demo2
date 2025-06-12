@@ -42,6 +42,9 @@ export type MidiEvent =
       currentKey: string;
       currentScale: Scale;
     }
+  | { type: "arpeggio"; notes: Note[]; currentKey: string; currentScale: Scale }
+  | { type: "parallel-motion"; notes: Note[]; currentKey: string; currentScale: Scale }
+  | { type: "marble-bounce"; note: Note; currentKey: string; currentScale: Scale }
   | { type: "pedal"; pedal: Pedal }
   | { type: "silence"; duration: number }
   | { type: "allNotesOff" };

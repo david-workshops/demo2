@@ -17,12 +17,35 @@ const SCALES: Record<Scale, number[]> = {
 
 // State variables
 let currentKey = Math.floor(Math.random() * 12); // 0-11 for C through B
-let currentScale: Scale = "major";
+let currentScale: Scale = "wholeTone"; // Start with impressionistic whole tone scale
 let lastModeChangeTime = Date.now();
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let _noteCounter = 0;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-let density = 0.7; // Probability of generating a note vs. silence
+let density = 0.6; // Lower density for more atmospheric, impressionistic feel
+
+// Marble physics state
+interface MarbleState {
+  x: number; // Position along keyboard (0-1)
+  y: number; // Height above strings (0-1)
+  velocityX: number;
+  velocityY: number;
+  gravity: number;
+  damping: number;
+  active: boolean;
+  lastBounceTime: number;
+}
+
+let marbleState: MarbleState = {
+  x: 0.5,
+  y: 0.8,
+  velocityX: 0,
+  velocityY: 0,
+  gravity: 0.002,
+  damping: 0.95,
+  active: false,
+  lastBounceTime: -1000, // Initialize to past time so no immediate bounces
+};
 
 // Apply weather influence to music parameters
 function applyWeatherInfluence(weather: WeatherData | null) {
@@ -121,13 +144,13 @@ function applyWeatherInfluence(weather: WeatherData | null) {
 }
 // Weather influence settings
 const defaultSettings = {
-  tempo: 100, // Base tempo (events per minute)
-  density: 0.7, // Probability of generating notes vs. silence
-  minOctave: 1, // Minimum octave
-  maxOctave: 7, // Maximum octave
-  sustainProbability: 0.05, // Probability of using sustain pedal
-  velocityRange: { min: 60, max: 100 }, // Velocity range for notes
-  noteDurationRange: { min: 500, max: 2500 }, // Duration range in ms
+  tempo: 80, // Slower tempo for impressionistic feel
+  density: 0.6, // Lower density for more space and atmosphere
+  minOctave: 2, // Higher minimum for clearer impressionistic textures
+  maxOctave: 7, // Keep full range
+  sustainProbability: 0.15, // More sustain for impressionistic atmosphere
+  velocityRange: { min: 40, max: 85 }, // Softer dynamics overall
+  noteDurationRange: { min: 800, max: 4000 }, // Longer, more flowing notes
 };
 
 // Helper function to get notes in the current key and scale
@@ -227,27 +250,144 @@ function generateChord(weather: WeatherData | null, numNotes = 3): Note[] {
   return chordNotes;
 }
 
+// Generate impressionistic chord (4ths, 5ths, whole tone clusters)
+function generateImpressionisticChord(weather: WeatherData | null, numNotes = 3): Note[] {
+  const settings = applyWeatherInfluence(weather);
+  const scaleNotes = getScaleNotes();
+  const rootIndex = Math.floor(Math.random() * scaleNotes.length);
+  const rootNote = scaleNotes[rootIndex];
+
+  const chordNotes: Note[] = [];
+  const rootOctave = Math.floor(Math.random() * 2) + Math.max(3, settings.minOctave);
+
+  // Root note
+  const rootVelocity = Math.floor(Math.random() * 20) + settings.velocityRange.min;
+  const rootDuration = Math.random() * (settings.noteDurationRange.max - settings.noteDurationRange.min) + settings.noteDurationRange.min;
+
+  chordNotes.push({
+    name: NOTES[rootNote],
+    octave: rootOctave,
+    midiNumber: rootNote + rootOctave * 12 + 12,
+    velocity: rootVelocity,
+    duration: rootDuration,
+  });
+
+  // Add impressionistic intervals (4ths, 5ths, or whole tone steps)
+  for (let i = 1; i < numNotes; i++) {
+    let intervalType = Math.random();
+    let nextNote: number;
+    let nextOctave = rootOctave;
+
+    if (currentScale === 'wholeTone') {
+      // For whole tone, use steps of 2 semitones
+      nextNote = (rootNote + i * 2) % 12;
+    } else if (intervalType < 0.4) {
+      // Perfect 4th (5 semitones)
+      nextNote = (rootNote + 5) % 12;
+      if (nextNote < rootNote) nextOctave++;
+    } else if (intervalType < 0.7) {
+      // Perfect 5th (7 semitones)  
+      nextNote = (rootNote + 7) % 12;
+      if (nextNote < rootNote) nextOctave++;
+    } else {
+      // Scale-based interval
+      const nextIndex = (rootIndex + i * 2) % scaleNotes.length;
+      nextNote = scaleNotes[nextIndex];
+      if (nextIndex < rootIndex) nextOctave++;
+    }
+
+    chordNotes.push({
+      name: NOTES[nextNote],
+      octave: nextOctave,
+      midiNumber: nextNote + nextOctave * 12 + 12,
+      velocity: Math.floor(Math.random() * 15) + Math.max(35, settings.velocityRange.min - 25),
+      duration: rootDuration * (0.7 + Math.random() * 0.6), // Some variation
+    });
+  }
+
+  return chordNotes;
+}
+
+// Generate arpeggiated passage
+function generateArpeggiatedPassage(weather: WeatherData | null, numNotes = 4): Note[] {
+  const settings = applyWeatherInfluence(weather);
+  const scaleNotes = getScaleNotes();
+  const notes: Note[] = [];
+  
+  const baseOctave = Math.floor(Math.random() * 2) + Math.max(3, settings.minOctave);
+  const direction = Math.random() < 0.5 ? 1 : -1; // ascending or descending
+  const baseDuration = Math.random() * 500 + 400; // 400-900ms base duration
+  
+  for (let i = 0; i < numNotes; i++) {
+    const scaleIndex = (Math.floor(Math.random() * scaleNotes.length) + i * direction) % scaleNotes.length;
+    const note = scaleNotes[Math.abs(scaleIndex)];
+    const octave = baseOctave + Math.floor(i * direction / scaleNotes.length);
+    
+    notes.push({
+      name: NOTES[note],
+      octave: Math.max(1, Math.min(8, octave)),
+      midiNumber: note + Math.max(1, Math.min(8, octave)) * 12 + 12,
+      velocity: Math.floor(Math.random() * 25) + settings.velocityRange.min - 10,
+      duration: baseDuration * (0.8 + Math.random() * 0.4), // Slight variation
+    });
+  }
+  
+  return notes;
+}
+
+// Generate parallel motion (like Debussy's style)
+function generateParallelMotion(weather: WeatherData | null, numVoices = 3): Note[] {
+  const settings = applyWeatherInfluence(weather);
+  const scaleNotes = getScaleNotes();
+  const notes: Note[] = [];
+  
+  const baseOctave = Math.floor(Math.random() * 2) + Math.max(3, settings.minOctave);
+  const rootIndex = Math.floor(Math.random() * scaleNotes.length);
+  const baseDuration = Math.random() * (settings.noteDurationRange.max - settings.noteDurationRange.min) + settings.noteDurationRange.min;
+  
+  // Generate parallel voices with same harmonic interval
+  const interval = Math.random() < 0.5 ? 2 : 3; // Major 2nd or minor 3rd intervals
+  
+  for (let i = 0; i < numVoices; i++) {
+    const noteIndex = (rootIndex + i * interval) % scaleNotes.length;
+    const note = scaleNotes[noteIndex];
+    const octave = baseOctave + Math.floor((rootIndex + i * interval) / scaleNotes.length);
+    
+    notes.push({
+      name: NOTES[note],
+      octave: Math.max(1, Math.min(8, octave)),
+      midiNumber: note + Math.max(1, Math.min(8, octave)) * 12 + 12,
+      velocity: Math.floor(Math.random() * 20) + settings.velocityRange.min - 15,
+      duration: baseDuration * (0.9 + Math.random() * 0.2), // Very slight variation for parallel motion
+    });
+  }
+  
+  return notes;
+}
+
 // Occasionally change key, scale, or mode
 function maybeChangeMusicalContext(): void {
   const now = Date.now();
 
-  // Change approximately every 3-5 minutes
-  if (now - lastModeChangeTime > 3 * 60 * 1000 && Math.random() < 0.01) {
-    // 1% chance per check when we're past the minimum time
+  // Change approximately every 2-4 minutes for more variation
+  if (now - lastModeChangeTime > 2 * 60 * 1000 && Math.random() < 0.015) {
+    // 1.5% chance per check when we're past the minimum time
     const changeType = Math.floor(Math.random() * 3);
 
     if (changeType === 0) {
-      // Change key
-      currentKey = Math.floor(Math.random() * 12);
+      // Change key, prefer impressionistic keys
+      const impressionisticKeys = [0, 2, 4, 6, 7, 9, 11]; // C, D, E, F#, G, A, B - whole tone friendly
+      currentKey = impressionisticKeys[Math.floor(Math.random() * impressionisticKeys.length)];
     } else if (changeType === 1) {
-      // Change scale
-      const scaleNames = Object.keys(SCALES) as Scale[];
-      currentScale = scaleNames[Math.floor(Math.random() * scaleNames.length)];
+      // Change scale, prefer impressionistic scales
+      const impressionisticScales: Scale[] = ['wholeTone', 'pentatonicMajor', 'pentatonicMinor', 'lydian', 'dorian'];
+      currentScale = impressionisticScales[Math.floor(Math.random() * impressionisticScales.length)];
     } else {
       // Change both
-      currentKey = Math.floor(Math.random() * 12);
-      const scaleNames = Object.keys(SCALES) as Scale[];
-      currentScale = scaleNames[Math.floor(Math.random() * scaleNames.length)];
+      const impressionisticKeys = [0, 2, 4, 6, 7, 9, 11];
+      currentKey = impressionisticKeys[Math.floor(Math.random() * impressionisticKeys.length)];
+      const impressionisticScales: Scale[] = ['wholeTone', 'pentatonicMajor', 'pentatonicMinor', 'lydian', 'dorian'];
+      currentScale = impressionisticScales[Math.floor(Math.random() * impressionisticScales.length)];
     }
 
     lastModeChangeTime = now;
@@ -290,6 +430,92 @@ function decidePedal(weather: WeatherData | null): Pedal | null {
   return null;
 }
 
+// Marble physics simulation
+function updateMarble(deltaTime: number): void {
+  if (!marbleState.active) return;
+
+  // Apply gravity
+  marbleState.velocityY -= marbleState.gravity * deltaTime;
+  
+  // Update position
+  marbleState.x += marbleState.velocityX * deltaTime;
+  marbleState.y += marbleState.velocityY * deltaTime;
+  
+  // Bounce off sides (keyboard edges)
+  if (marbleState.x <= 0 || marbleState.x >= 1) {
+    marbleState.velocityX *= -marbleState.damping;
+    marbleState.x = Math.max(0, Math.min(1, marbleState.x));
+  }
+  
+  // Bounce off strings (bottom)
+  if (marbleState.y <= 0) {
+    marbleState.velocityY *= -marbleState.damping;
+    marbleState.y = 0;
+    marbleState.lastBounceTime = Date.now();
+    
+    // Apply some random horizontal movement on bounce
+    marbleState.velocityX += (Math.random() - 0.5) * 0.001;
+  }
+  
+  // Bounce off ceiling
+  if (marbleState.y >= 1) {
+    marbleState.velocityY *= -marbleState.damping;
+    marbleState.y = 1;
+  }
+  
+  // Stop if moving too slowly
+  if (Math.abs(marbleState.velocityX) < 0.0001 && Math.abs(marbleState.velocityY) < 0.0001 && marbleState.y <= 0.01) {
+    marbleState.active = false;
+  }
+}
+
+// Trigger marble movement when a note is played
+function triggerMarble(note: Note): void {
+  // Convert MIDI note to keyboard position (0-1)
+  const keyboardPosition = Math.max(0, Math.min(1, (note.midiNumber - 21) / 87)); // Piano range A0 to C8
+  
+  // Add some randomness to the marble trigger
+  const randomOffset = (Math.random() - 0.5) * 0.2; // ±0.1 position
+  marbleState.x = Math.max(0, Math.min(1, keyboardPosition + randomOffset));
+  
+  // Give the marble some initial velocity based on note velocity
+  const velocityScale = note.velocity / 127;
+  marbleState.velocityX = (Math.random() - 0.5) * 0.002 * velocityScale;
+  marbleState.velocityY = 0.001 + Math.random() * 0.002 * velocityScale;
+  
+  // Start from a random height
+  marbleState.y = 0.3 + Math.random() * 0.5;
+  
+  marbleState.active = true;
+}
+
+// Generate marble bounce notes
+function generateMarbleBounceNote(): Note | null {
+  if (!marbleState.active) {
+    return null;
+  }
+  
+  // Only generate bounce notes when the marble actually bounced recently
+  const timeSinceBounce = Date.now() - marbleState.lastBounceTime;
+  if (timeSinceBounce > 100) {
+    return null;
+  }
+  
+  // Convert marble position to MIDI note
+  const midiNumber = Math.floor(21 + marbleState.x * 87); // A0 to C8 range
+  
+  // Create a metallic-sounding note with different characteristics
+  const note: Note = {
+    name: NOTES[midiNumber % 12],
+    octave: Math.floor((midiNumber - 12) / 12),
+    midiNumber: midiNumber,
+    velocity: Math.floor(20 + Math.random() * 40), // Softer, metallic
+    duration: 200 + Math.random() * 300, // Shorter, more percussive
+  };
+  
+  return note;
+}
+
 // Main function to generate MIDI events
 export function generateMidiEvent(
   weather: WeatherData | null = null,
@@ -298,18 +524,20 @@ export function generateMidiEvent(
   maybeChangeMusicalContext();
 
   const settings = applyWeatherInfluence(weather);
+  
+  // Update marble physics
+  updateMarble(50); // Approximate deltaTime for 20fps updates
 
-  // Randomly introduce silence based on density setting
+  // Randomly introduce silence based on density setting (more space for impressionistic feel)
   if (Math.random() > settings.density) {
-    // Return a "silence" event - not an actual MIDI event, but used to
-    // indicate that nothing is happening for this interval
+    // Return a "silence" event with longer durations for more atmospheric pauses
     return {
       type: "silence",
-      duration: Math.random() * 500 + 100, // 100-600ms of silence
+      duration: Math.random() * 1500 + 500, // 500-2000ms of silence
     };
   }
 
-  // Occasionally use pedals
+  // Occasionally use pedals (more sustain for impressionistic style)
   const pedal = decidePedal(weather);
   if (pedal) {
     return {
@@ -318,55 +546,78 @@ export function generateMidiEvent(
     };
   }
 
-  // Decide between note, chord, or counterpoint
+  // Decide between different impressionistic textures
   const eventType = Math.random();
 
-  if (eventType < 0.5) {
-    // Generate a single note
+  if (eventType < 0.3) {
+    // Generate a single note with impressionistic character
+    const note = generateRandomNote(weather);
+    triggerMarble(note); // Trigger marble on every note
     return {
       type: "note",
-      note: generateRandomNote(weather),
+      note,
       currentKey: NOTES[currentKey],
       currentScale,
     };
-  } else if (eventType < 0.8) {
-    // Generate a chord
-    const chordSize = Math.floor(Math.random() * 3) + 3; // 3-5 notes
+  } else if (eventType < 0.6) {
+    // Generate impressionistic chord (often 4ths, 5ths, or whole tone clusters)
+    const chordSize = Math.floor(Math.random() * 3) + 2; // 2-4 notes for less dense chords
+    const notes = generateImpressionisticChord(weather, chordSize);
+    // Trigger marble on the highest note of the chord
+    if (notes.length > 0) {
+      const highestNote = notes.reduce((prev, current) => 
+        (current.midiNumber > prev.midiNumber) ? current : prev
+      );
+      triggerMarble(highestNote);
+    }
     return {
       type: "chord",
-      notes: generateChord(weather, chordSize),
+      notes,
+      currentKey: NOTES[currentKey],
+      currentScale,
+    };
+  } else if (eventType < 0.85) {
+    // Generate flowing arpeggiated passage
+    const numNotes = Math.floor(Math.random() * 4) + 3; // 3-6 notes
+    const notes = generateArpeggiatedPassage(weather, numNotes);
+    // Trigger marble on the first note
+    if (notes.length > 0) {
+      triggerMarble(notes[0]);
+    }
+    return {
+      type: "arpeggio",
+      notes,
       currentKey: NOTES[currentKey],
       currentScale,
     };
   } else {
-    // Generate counterpoint (2-4 notes across different registers)
+    // Generate atmospheric texture (parallel motion, similar to Debussy)
     const numVoices = Math.floor(Math.random() * 3) + 2; // 2-4 voices
-    const notes: Note[] = [];
-
-    for (let i = 0; i < numVoices; i++) {
-      // Assign each voice to a different register, influenced by weather
-      const settings = applyWeatherInfluence(weather);
-      const range = Math.min(settings.maxOctave - settings.minOctave, 5);
-      const segment = range / numVoices;
-      const minOctave = Math.max(
-        settings.minOctave,
-        Math.floor(settings.minOctave + i * segment),
-      );
-      const maxOctave = Math.min(
-        settings.maxOctave,
-        Math.ceil(settings.minOctave + (i + 1) * segment),
-      );
-
-      notes.push(
-        generateRandomNote(weather, { min: minOctave, max: maxOctave }),
-      );
+    const notes = generateParallelMotion(weather, numVoices);
+    // Trigger marble on a random note from the texture
+    if (notes.length > 0) {
+      const randomNote = notes[Math.floor(Math.random() * notes.length)];
+      triggerMarble(randomNote);
     }
-
     return {
-      type: "counterpoint",
+      type: "parallel-motion",
       notes,
       currentKey: NOTES[currentKey],
       currentScale,
     };
   }
+}
+
+// Separate function to check for marble bounce events (to be called by server)
+export function checkMarbleBounce(): MidiEvent | null {
+  const marbleBounceNote = generateMarbleBounceNote();
+  if (marbleBounceNote) {
+    return {
+      type: "marble-bounce",
+      note: marbleBounceNote,
+      currentKey: NOTES[currentKey],
+      currentScale,
+    };
+  }
+  return null;
 }

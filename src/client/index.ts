@@ -32,6 +32,9 @@ const weatherImpactDisplay = document.getElementById(
 ) as HTMLElement;
 const consoleOutput = document.getElementById("console-output") as HTMLElement;
 
+// Marble visualization element
+let marbleElement: HTMLElement | null = null;
+
 // AudioContext and MIDI
 let audioContext: AudioContext | null = null;
 let gainNode: GainNode | null = null;
@@ -290,7 +293,7 @@ async function updateWeather() {
 }
 
 // Play a note using Web Audio API
-function playNote(note: Note) {
+function playNote(note: Note, isMarbleBounce = false) {
   if (!audioContext || !gainNode) initAudio();
   if (!audioContext || !gainNode) return;
 
@@ -299,28 +302,51 @@ function playNote(note: Note) {
 
   // Create oscillator
   const oscillator = audioContext.createOscillator();
-  oscillator.type = "sine"; // Piano-like sound
+  
+  if (isMarbleBounce) {
+    // Metallic sound for marble bounces
+    oscillator.type = "sawtooth"; // More metallic than sine
+  } else {
+    // Regular piano-like sound
+    oscillator.type = "sine";
+  }
+  
   oscillator.frequency.value = midiToFrequency(note.midiNumber);
 
   // Create note-specific gain node for envelope
   const noteGain = audioContext.createGain();
   noteGain.gain.value = 0;
 
-  // Connect nodes
-  oscillator.connect(noteGain);
+  // For marble bounces, add some filtering for metallic effect
+  let finalDestination = noteGain;
+  if (isMarbleBounce) {
+    // Add a high-pass filter for metallic effect
+    const filter = audioContext.createBiquadFilter();
+    filter.type = "highpass";
+    filter.frequency.value = 800 + Math.random() * 1200; // Random metallic frequency
+    filter.Q.value = 5;
+    
+    oscillator.connect(filter);
+    filter.connect(noteGain);
+  } else {
+    // Connect normally for regular notes
+    oscillator.connect(noteGain);
+  }
+
+  // Connect to output
   noteGain.connect(gainNode);
 
   // Apply envelope
   const velocityGain = note.velocity / 127;
-  const attackTime = 0.01;
-  const releaseTime = 0.3;
+  const attackTime = isMarbleBounce ? 0.005 : 0.01; // Faster attack for marble
+  const releaseTime = isMarbleBounce ? 0.1 : 0.3; // Shorter release for marble
 
   // Attack
   noteGain.gain.setValueAtTime(0, now);
   noteGain.gain.linearRampToValueAtTime(velocityGain, now + attackTime);
 
-  // Calculate end time based on sustain pedal
-  const sustainMultiplier = pedals.sustain > 0.5 ? 3 : 1;
+  // Calculate end time based on sustain pedal (marble bounces ignore sustain)
+  const sustainMultiplier = !isMarbleBounce && pedals.sustain > 0.5 ? 3 : 1;
   const noteDuration = (note.duration / 1000) * sustainMultiplier;
   const endTime = now + noteDuration;
 
@@ -348,23 +374,26 @@ function playNote(note: Note) {
   );
 
   // Create visualization element
-  createNoteVisualization(note);
+  createNoteVisualization(note, isMarbleBounce);
 }
 
 // Play a note using MIDI output
-function playMidiNote(note: Note) {
+function playMidiNote(note: Note, isMarbleBounce = false) {
   if (!midiOutput) return;
 
+  // For marble bounces, use a different MIDI channel or modify the note
+  const channel = isMarbleBounce ? 0x91 : 0x90; // Use channel 2 for marble bounces
+  
   // NoteOn message
-  midiOutput.send([0x90, note.midiNumber, note.velocity]);
+  midiOutput.send([channel, note.midiNumber, note.velocity]);
 
   // Schedule NoteOff
   setTimeout(() => {
-    midiOutput?.send([0x80, note.midiNumber, 0]);
+    midiOutput?.send([channel - 0x10, note.midiNumber, 0]); // NoteOff
   }, note.duration);
 
   // Create visualization element
-  createNoteVisualization(note);
+  createNoteVisualization(note, isMarbleBounce);
 }
 
 // Stop all notes
@@ -427,10 +456,16 @@ function resetAllPedals() {
 // Removed unused function handlePedal
 
 // Create visualization for a note
-function createNoteVisualization(note: Note) {
+function createNoteVisualization(note: Note, isMarbleBounce = false) {
   const noteElement = document.createElement("div");
-  noteElement.className = "note-block";
-  noteElement.textContent = `${note.name}${note.octave}`;
+  
+  if (isMarbleBounce) {
+    noteElement.className = "note-block marble-note";
+    noteElement.textContent = `⚪${note.name}${note.octave}`; // Marble symbol
+  } else {
+    noteElement.className = "note-block";
+    noteElement.textContent = `${note.name}${note.octave}`;
+  }
 
   // Set width based on duration
   const width = Math.max(30, Math.min(200, note.duration / 50));
@@ -439,36 +474,46 @@ function createNoteVisualization(note: Note) {
   // Set color intensity based on velocity
   const intensity = Math.floor((note.velocity / 127) * 100);
 
-  // Modify color based on weather if available
-  let hue = 120; // Default green
-  const currentWeather = musicState.getWeatherData();
-  if (currentWeather) {
-    // Adjust hue based on temperature: colder = blue (240), hotter = red (0)
-    if (currentWeather.temperature < 0) {
-      hue = 240; // Blue for very cold
-    } else if (currentWeather.temperature < 10) {
-      hue = 180; // Cyan for cool
-    } else if (currentWeather.temperature > 30) {
-      hue = 0; // Red for very hot
-    } else if (currentWeather.temperature > 25) {
-      hue = 60; // Yellow for warm
-    }
+  // Different color scheme for marble bounces
+  let hue = isMarbleBounce ? 300 : 120; // Purple/magenta for marble, green for regular
+  
+  if (!isMarbleBounce) {
+    // Modify color based on weather if available (only for regular notes)
+    const currentWeather = musicState.getWeatherData();
+    if (currentWeather) {
+      // Adjust hue based on temperature: colder = blue (240), hotter = red (0)
+      if (currentWeather.temperature < 0) {
+        hue = 240; // Blue for very cold
+      } else if (currentWeather.temperature < 10) {
+        hue = 180; // Cyan for cool
+      } else if (currentWeather.temperature > 30) {
+        hue = 0; // Red for very hot
+      } else if (currentWeather.temperature > 25) {
+        hue = 60; // Yellow for warm
+      }
 
-    // Adjust saturation based on weather conditions
-    if (
-      [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(
-        currentWeather.weatherCode,
-      )
-    ) {
-      // Rainy conditions, more blue
-      hue = Math.max(hue, 180);
-    } else if ([95, 96, 99].includes(currentWeather.weatherCode)) {
-      // Stormy conditions, more purple
-      hue = 270;
+      // Adjust saturation based on weather conditions
+      if (
+        [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(
+          currentWeather.weatherCode,
+        )
+      ) {
+        // Rainy conditions, more blue
+        hue = Math.max(hue, 180);
+      } else if ([95, 96, 99].includes(currentWeather.weatherCode)) {
+        // Stormy conditions, more purple
+        hue = 270;
+      }
     }
   }
 
-  noteElement.style.backgroundColor = `hsl(${hue}, 100%, ${intensity}%)`;
+  noteElement.style.backgroundColor = `hsl(${hue}, ${isMarbleBounce ? 80 : 100}%, ${intensity}%)`;
+  
+  if (isMarbleBounce) {
+    // Add metallic visual effect
+    noteElement.style.border = "1px solid rgba(255, 255, 255, 0.6)";
+    noteElement.style.boxShadow = "0 0 5px rgba(255, 255, 255, 0.4)";
+  }
 
   visualization.appendChild(noteElement);
 
@@ -479,6 +524,37 @@ function createNoteVisualization(note: Note) {
 
   // Update notes playing display
   updateNotesPlayingDisplay();
+}
+
+// Create or update marble visualization
+function updateMarbleVisualization(x: number, y: number) {
+  if (!marbleElement) {
+    marbleElement = document.createElement("div");
+    marbleElement.className = "marble";
+    marbleElement.textContent = "⚪";
+    marbleElement.style.position = "absolute";
+    marbleElement.style.fontSize = "16px";
+    marbleElement.style.zIndex = "100";
+    marbleElement.style.pointerEvents = "none";
+    marbleElement.style.transition = "all 0.1s ease-out";
+    visualization.appendChild(marbleElement);
+  }
+  
+  // Convert normalized coordinates to pixel positions
+  const rect = visualization.getBoundingClientRect();
+  const pixelX = x * rect.width;
+  const pixelY = (1 - y) * rect.height; // Invert Y coordinate
+  
+  marbleElement.style.left = `${pixelX}px`;
+  marbleElement.style.top = `${pixelY}px`;
+}
+
+// Remove marble visualization
+function removeMarbleVisualization() {
+  if (marbleElement) {
+    marbleElement.remove();
+    marbleElement = null;
+  }
 }
 
 // Update pedal display
@@ -563,6 +639,20 @@ musicState.subscribe((event: MusicStateEvent) => {
       }
       break;
 
+    case "marble-bounce":
+      // Handle marble bounce separately with special audio and visual effects
+      if (output === "browser") {
+        playNote(event.note, true); // Play with metallic sound
+      } else if (output === "midi" && midiOutput) {
+        playMidiNote(event.note, true); // Play on MIDI channel 2
+      }
+      
+      // Update marble visualization
+      updateMarbleVisualization(event.position.x, event.position.y);
+      
+      logToConsole(`Marble bounce: ${event.note.name}${event.note.octave}`);
+      break;
+
     case "key-updated":
       // Update key and scale display
       currentKeyDisplay.textContent = musicState.getCurrentKey();
@@ -596,6 +686,7 @@ musicState.subscribe((event: MusicStateEvent) => {
     case "all-notes-off":
       // Stop all notes
       stopAllNotes();
+      removeMarbleVisualization();
       logToConsole("All notes off");
       break;
   }

@@ -7,7 +7,8 @@ export type MusicStateEvent =
   | { type: "weather-updated" }
   | { type: "key-updated" }
   | { type: "pedals-updated" }
-  | { type: "all-notes-off" };
+  | { type: "all-notes-off" }
+  | { type: "marble-bounce"; note: Note; position: { x: number; y: number } };
 
 // Subscriber callback type
 type SubscriberCallback = (event: MusicStateEvent) => void;
@@ -87,11 +88,13 @@ class MusicStateService {
 
       case "chord":
       case "counterpoint":
+      case "arpeggio":
+      case "parallel-motion":
         // Update key and scale
         this.currentKey = event.currentKey;
         this.currentScale = event.currentScale;
 
-        // Add all notes in the chord or counterpoint
+        // Add all notes in the chord, counterpoint, arpeggio, or parallel motion
         event.notes.forEach((note) => {
           // Add timestamp to the note for tracking
           note._startTime = Date.now();
@@ -100,6 +103,25 @@ class MusicStateService {
 
         this.notifySubscribers({ type: "notes-updated" });
         this.notifySubscribers({ type: "key-updated" });
+        break;
+
+      case "marble-bounce":
+        // Update key and scale
+        this.currentKey = event.currentKey;
+        this.currentScale = event.currentScale;
+
+        // Add timestamp to the marble bounce note
+        event.note._startTime = Date.now();
+        this.notesPlaying.push(event.note);
+
+        // Notify about marble bounce with position
+        const position = this.calculateMarblePosition(event.note);
+        this.notifySubscribers({ 
+          type: "marble-bounce", 
+          note: event.note, 
+          position 
+        });
+        this.notifySubscribers({ type: "notes-updated" });
         break;
 
       case "pedal":
@@ -122,6 +144,14 @@ class MusicStateService {
 
     // Cleanup notes that are finished playing
     this.cleanupFinishedNotes();
+  }
+  
+  // Calculate marble position based on note
+  private calculateMarblePosition(note: Note): { x: number; y: number } {
+    // Convert MIDI note to keyboard position (0-1)
+    const x = Math.max(0, Math.min(1, (note.midiNumber - 21) / 87)); // Piano range A0 to C8
+    const y = Math.random() * 0.5 + 0.2; // Random height between 0.2 and 0.7
+    return { x, y };
   }
 
   // Remove notes that have finished playing

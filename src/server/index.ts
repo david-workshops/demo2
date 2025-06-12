@@ -2,7 +2,7 @@ import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import path from "path";
-import { generateMidiEvent } from "./music-generator";
+import { generateMidiEvent, checkMarbleBounce } from "./music-generator";
 import { WeatherData } from "../shared/types";
 import dotenv from "dotenv";
 import { freepikService } from "./freepik-service";
@@ -57,6 +57,12 @@ io.on("connection", (socket) => {
       intervalId = setInterval(() => {
         const event = generateMidiEvent(currentWeather);
         socket.emit("midi", event);
+        
+        // Also check for marble bounce events
+        const marbleBounceEvent = checkMarbleBounce();
+        if (marbleBounceEvent) {
+          socket.emit("midi", marbleBounceEvent);
+        }
       }, 100); // Generate events every 100ms (adjust as needed)
     }
   });
