@@ -24,6 +24,19 @@ let _noteCounter = 0;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let density = 0.7; // Probability of generating a note vs. silence
 
+// Car state management
+interface Car {
+  id: string;
+  startTime: number;
+  baseNote: number; // Base MIDI note number
+  octave: number;
+  velocity: number;
+}
+
+let activeCars: Car[] = [];
+let lastCarSpawnTime = Date.now();
+let nextCarSpawnDelay = getRandomCarSpawnDelay();
+
 // Apply weather influence to music parameters
 function applyWeatherInfluence(weather: WeatherData | null) {
   // Reset to defaults if no weather data
@@ -254,6 +267,82 @@ function maybeChangeMusicalContext(): void {
   }
 }
 
+// Car management functions
+function getRandomCarSpawnDelay(): number {
+  // Cars spawn randomly between 3-15 seconds
+  return 3000 + Math.random() * 12000;
+}
+
+function generateCarId(): string {
+  return `car_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+function spawnCar(): Car {
+  const scaleNotes = getScaleNotes();
+  const noteIndex = Math.floor(Math.random() * scaleNotes.length);
+  const baseNote = scaleNotes[noteIndex];
+
+  // Use lower octaves (1-4) for subtle car sounds
+  const octave = Math.floor(Math.random() * 4) + 1;
+
+  // Lower velocity for subtle effect
+  const velocity = Math.floor(Math.random() * 30) + 35; // 35-65 velocity
+
+  return {
+    id: generateCarId(),
+    startTime: Date.now(),
+    baseNote,
+    octave,
+    velocity,
+  };
+}
+
+function updateCars(): void {
+  const now = Date.now();
+
+  // Remove cars that have finished (after 4 seconds)
+  activeCars = activeCars.filter((car) => now - car.startTime < 4000);
+
+  // Maybe spawn a new car
+  if (now - lastCarSpawnTime > nextCarSpawnDelay) {
+    if (Math.random() < 0.8) {
+      // 80% chance to actually spawn when time is up
+      activeCars.push(spawnCar());
+    }
+    lastCarSpawnTime = now;
+    nextCarSpawnDelay = getRandomCarSpawnDelay();
+  }
+}
+
+function generateCarNote(car: Car): Note {
+  const now = Date.now();
+  const elapsedTime = now - car.startTime;
+
+  // Doppler effect: pitch goes up for 3 seconds, then down for 1 second
+  let pitchOffset = 0;
+
+  if (elapsedTime < 3000) {
+    // Rising phase: gradually increase pitch
+    const progress = elapsedTime / 3000;
+    pitchOffset = Math.floor(progress * 7); // Up to 7 semitones higher
+  } else {
+    // Falling phase: decrease pitch quickly
+    const progress = (elapsedTime - 3000) / 1000;
+    pitchOffset = Math.floor(7 - progress * 12); // Down to 5 semitones lower
+  }
+
+  const finalNote = (car.baseNote + pitchOffset) % 12;
+  const midiNumber = finalNote + car.octave * 12 + 12;
+
+  return {
+    name: NOTES[finalNote],
+    octave: car.octave,
+    midiNumber,
+    velocity: car.velocity,
+    duration: 150, // Short duration for subtle effect
+  };
+}
+
 // Track last time sustain pedal was turned off
 let lastSustainOffTime = Date.now();
 let sustainPedalEnabled = true;
@@ -296,8 +385,22 @@ export function generateMidiEvent(
 ): MidiEvent {
   _noteCounter++;
   maybeChangeMusicalContext();
+  updateCars();
 
   const settings = applyWeatherInfluence(weather);
+
+  // First, check if we should generate a car event
+  if (activeCars.length > 0 && Math.random() < 0.3) {
+    // 30% chance to generate car event when cars are active
+    const car = activeCars[Math.floor(Math.random() * activeCars.length)];
+    return {
+      type: "car",
+      note: generateCarNote(car),
+      currentKey: NOTES[currentKey],
+      currentScale,
+      carId: car.id,
+    };
+  }
 
   // Randomly introduce silence based on density setting
   if (Math.random() > settings.density) {

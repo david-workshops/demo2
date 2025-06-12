@@ -44,7 +44,14 @@ export type MidiEvent =
     }
   | { type: "pedal"; pedal: Pedal }
   | { type: "silence"; duration: number }
-  | { type: "allNotesOff" };
+  | { type: "allNotesOff" }
+  | {
+      type: "car";
+      note: Note;
+      currentKey: string;
+      currentScale: Scale;
+      carId: string;
+    };
 
 // Extended MIDI for disklavier
 export interface XPMidiParams {

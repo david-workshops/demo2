@@ -73,6 +73,7 @@ class MusicStateService {
   private handleMidiEvent(event: MidiEvent) {
     switch (event.type) {
       case "note":
+      case "car":
         // Update key and scale
         this.currentKey = event.currentKey;
         this.currentScale = event.currentScale;
