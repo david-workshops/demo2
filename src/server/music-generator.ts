@@ -24,6 +24,13 @@ let _noteCounter = 0;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let density = 0.7; // Probability of generating a note vs. silence
 
+// Air conditioning + birds + Beethoven mode state
+let airConditioningMode = true; // Enable the special soundscape mode
+let lastBirdChirpTime = 0;
+let airConditioningActive = false;
+let lastAirConditioningTime = 0;
+let beethovenHarmonyPhase = 0; // Track harmonic progression phase
+
 // Apply weather influence to music parameters
 function applyWeatherInfluence(weather: WeatherData | null) {
   // Reset to defaults if no weather data
@@ -295,6 +302,12 @@ export function generateMidiEvent(
   weather: WeatherData | null = null,
 ): MidiEvent {
   _noteCounter++;
+
+  // Use special air conditioning + birds + Beethoven mode
+  if (airConditioningMode) {
+    return generateAirConditioningBirdsBeethoven();
+  }
+
   maybeChangeMusicalContext();
 
   const settings = applyWeatherInfluence(weather);
@@ -368,5 +381,164 @@ export function generateMidiEvent(
       currentKey: NOTES[currentKey],
       currentScale,
     };
+  }
+}
+
+// Generate air conditioning rumble + occasional bird chirps in Beethoven style
+function generateAirConditioningBirdsBeethoven(): MidiEvent {
+  const now = Date.now();
+
+  // Set up Beethoven-style harmonic context (C minor for dramatic effect)
+  currentKey = 0; // C
+  currentScale = "minor";
+
+  // Air conditioning rumble (continuous low bass notes)
+  const timeSinceLastAC = now - lastAirConditioningTime;
+  if (!airConditioningActive || timeSinceLastAC > 4000) {
+    // Start or continue air conditioning rumble every 4 seconds
+    lastAirConditioningTime = now;
+    airConditioningActive = true;
+
+    return generateAirConditioningRumble();
+  }
+
+  // Bird chirps (occasional high-pitched notes)
+  const timeSinceLastBird = now - lastBirdChirpTime;
+  const birdChirpProbability = 0.15; // 15% chance per generation cycle
+  const minTimeBetweenBirds = 2000; // At least 2 seconds between bird chirps
+
+  if (
+    Math.random() < birdChirpProbability &&
+    timeSinceLastBird > minTimeBetweenBirds
+  ) {
+    lastBirdChirpTime = now;
+    return generateBirdChirp();
+  }
+
+  // Beethoven-style harmonic progression (occasional chords)
+  if (Math.random() < 0.3) {
+    return generateBeethovenChord();
+  }
+
+  // Sustain pedal for atmospheric effect
+  if (Math.random() < 0.1) {
+    return {
+      type: "pedal",
+      pedal: { type: "sustain", value: 0.8 },
+    };
+  }
+
+  // Default to short silence to maintain atmosphere
+  return {
+    type: "silence",
+    duration: Math.random() * 800 + 200, // 200-1000ms of silence
+  };
+}
+
+// Generate low rumbling air conditioning sound
+function generateAirConditioningRumble(): MidiEvent {
+  // Generate multiple low bass notes to create rumbling effect
+  const rumbleNotes: Note[] = [];
+  const baseNotes = [0, 3, 7]; // C, Eb, G (minor triad) for Beethoven feel
+
+  baseNotes.forEach((noteIndex, i) => {
+    const note = (currentKey + noteIndex) % 12;
+    const octave = 1 + Math.floor(i / 2); // Very low octaves (1-2)
+
+    rumbleNotes.push({
+      name: NOTES[note],
+      octave,
+      midiNumber: note + octave * 12 + 12,
+      velocity: 35 + Math.floor(Math.random() * 25), // 35-60 (quiet rumble)
+      duration: 3000 + Math.random() * 2000, // 3-5 seconds (sustained)
+    });
+  });
+
+  return {
+    type: "chord",
+    notes: rumbleNotes,
+    currentKey: NOTES[currentKey],
+    currentScale,
+  };
+}
+
+// Generate bird chirp sounds
+function generateBirdChirp(): MidiEvent {
+  const chirpNotes: Note[] = [];
+  const numChirps = Math.floor(Math.random() * 3) + 1; // 1-3 quick chirps
+
+  for (let i = 0; i < numChirps; i++) {
+    // High-pitched notes in upper registers
+    const scaleNotes = getScaleNotes();
+    const noteIndex = Math.floor(Math.random() * scaleNotes.length);
+    const note = scaleNotes[noteIndex];
+    const octave = 6 + Math.floor(Math.random() * 2); // Octaves 6-7 (high)
+
+    chirpNotes.push({
+      name: NOTES[note],
+      octave,
+      midiNumber: note + octave * 12 + 12,
+      velocity: 70 + Math.floor(Math.random() * 30), // 70-100 (bright)
+      duration: 150 + Math.random() * 200, // 150-350ms (quick chirps)
+    });
+  }
+
+  return {
+    type: "counterpoint",
+    notes: chirpNotes,
+    currentKey: NOTES[currentKey],
+    currentScale,
+  };
+}
+
+// Generate Beethoven-style dramatic chords
+function generateBeethovenChord(): MidiEvent {
+  beethovenHarmonyPhase = (beethovenHarmonyPhase + 1) % 8;
+
+  // Beethoven-style chord progressions in C minor
+  const progressions = [
+    [0, 3, 7], // i (C minor)
+    [5, 8, 0], // iv (F minor)
+    [7, 11, 2], // V (G major)
+    [0, 3, 7], // i (C minor)
+    [8, 0, 3], // VI (Ab major)
+    [3, 7, 10], // III (Eb major)
+    [11, 2, 5], // V7 (G7)
+    [0, 3, 7], // i (C minor)
+  ];
+
+  const chordNotes: Note[] = [];
+  const currentProgression = progressions[beethovenHarmonyPhase];
+
+  currentProgression.forEach((noteOffset, i) => {
+    const note = (currentKey + noteOffset) % 12;
+    const octave = 3 + Math.floor(i / 2); // Middle register octaves 3-4
+
+    chordNotes.push({
+      name: NOTES[note],
+      octave,
+      midiNumber: note + octave * 12 + 12,
+      velocity: 65 + Math.floor(Math.random() * 35), // 65-100 (dramatic dynamics)
+      duration: 1500 + Math.random() * 1000, // 1.5-2.5 seconds
+    });
+  });
+
+  return {
+    type: "chord",
+    notes: chordNotes,
+    currentKey: NOTES[currentKey],
+    currentScale,
+  };
+}
+
+// Export function to toggle air conditioning mode
+export function setAirConditioningMode(enabled: boolean) {
+  airConditioningMode = enabled;
+  if (enabled) {
+    // Reset state when enabling
+    lastBirdChirpTime = 0;
+    airConditioningActive = false;
+    lastAirConditioningTime = 0;
+    beethovenHarmonyPhase = 0;
   }
 }
