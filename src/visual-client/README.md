@@ -35,6 +35,7 @@ The visualizer uses the following Freepik Mystic API features:
 ### Rate Limiting
 
 The Freepik API has the following limits to be aware of:
+
 - 450 requests per day (RPD) for each 2K and 4K resolutions
 - General rate per second (RPS) limitations
 
@@ -57,6 +58,7 @@ npm run dev:all
 ```
 
 This starts:
+
 - Piano backend: http://localhost:3000
 - Piano frontend: http://localhost:5173
 - Visualizer frontend: http://localhost:5174

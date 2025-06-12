@@ -10,7 +10,15 @@ export type Scale =
   | "locrian"
   | "pentatonicMajor"
   | "pentatonicMinor"
-  | "wholeTone";
+  | "wholeTone"
+  | "chromatic"
+  | "diminished"
+  | "augmented"
+  | "harmonicMinor"
+  | "doubleHarmonic"
+  | "hungarian"
+  | "byzantine"
+  | "oriental";
 
 export interface Note {
   name: string; // Note name (C, C#, etc.)
@@ -38,6 +46,12 @@ export type MidiEvent =
   | { type: "chord"; notes: Note[]; currentKey: string; currentScale: Scale }
   | {
       type: "counterpoint";
+      notes: Note[];
+      currentKey: string;
+      currentScale: Scale;
+    }
+  | {
+      type: "insectBurst";
       notes: Note[];
       currentKey: string;
       currentScale: Scale;

@@ -13,6 +13,15 @@ const SCALES: Record<Scale, number[]> = {
   pentatonicMajor: [0, 2, 4, 7, 9],
   pentatonicMinor: [0, 3, 5, 7, 10],
   wholeTone: [0, 2, 4, 6, 8, 10],
+  // Chaotic scales for atmospheric chaos
+  chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  diminished: [0, 2, 3, 5, 6, 8, 9, 11],
+  augmented: [0, 3, 4, 7, 8, 11],
+  harmonicMinor: [0, 2, 3, 5, 7, 8, 11],
+  doubleHarmonic: [0, 1, 4, 5, 7, 8, 11],
+  hungarian: [0, 2, 3, 6, 7, 8, 11],
+  byzantine: [0, 1, 4, 5, 7, 8, 11],
+  oriental: [0, 1, 4, 5, 6, 9, 10],
 };
 
 // State variables
@@ -24,6 +33,83 @@ let _noteCounter = 0;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let density = 0.7; // Probability of generating a note vs. silence
 
+// Chaos mode variables for atmospheric chaos
+let chaosMode = false;
+let chaosModeStartTime = Date.now();
+let insectBurstMode = false;
+let insectBurstStartTime = Date.now();
+let hardcoreMode = false;
+let hardcoreModeStartTime = Date.now();
+
+// Chaotic scales for atmospheric chaos
+const CHAOTIC_SCALES: Scale[] = [
+  "chromatic",
+  "diminished",
+  "augmented",
+  "harmonicMinor",
+  "doubleHarmonic",
+  "hungarian",
+  "byzantine",
+  "oriental",
+];
+
+// Check if we should enter chaos mode (random chance)
+function maybeEnterChaosMode(): void {
+  const now = Date.now();
+
+  // 0.5% chance per check to enter chaos mode
+  if (!chaosMode && Math.random() < 0.005) {
+    chaosMode = true;
+    chaosModeStartTime = now;
+    // Switch to a chaotic scale
+    currentScale =
+      CHAOTIC_SCALES[Math.floor(Math.random() * CHAOTIC_SCALES.length)];
+  }
+
+  // Chaos mode lasts 30 seconds to 2 minutes
+  if (chaosMode && now - chaosModeStartTime > 30000 + Math.random() * 90000) {
+    chaosMode = false;
+  }
+}
+
+// Check if we should enter insect burst mode
+function maybeEnterInsectBurstMode(): void {
+  const now = Date.now();
+
+  // 1% chance per check to enter insect burst mode
+  if (!insectBurstMode && Math.random() < 0.01) {
+    insectBurstMode = true;
+    insectBurstStartTime = now;
+  }
+
+  // Insect burst mode lasts 5-15 seconds
+  if (
+    insectBurstMode &&
+    now - insectBurstStartTime > 5000 + Math.random() * 10000
+  ) {
+    insectBurstMode = false;
+  }
+}
+
+// Check if we should enter hardcore mode
+function maybeEnterHardcoreMode(): void {
+  const now = Date.now();
+
+  // 0.8% chance per check to enter hardcore mode
+  if (!hardcoreMode && Math.random() < 0.008) {
+    hardcoreMode = true;
+    hardcoreModeStartTime = now;
+  }
+
+  // Hardcore mode lasts 20-60 seconds
+  if (
+    hardcoreMode &&
+    now - hardcoreModeStartTime > 20000 + Math.random() * 40000
+  ) {
+    hardcoreMode = false;
+  }
+}
+
 // Apply weather influence to music parameters
 function applyWeatherInfluence(weather: WeatherData | null) {
   // Reset to defaults if no weather data
@@ -34,6 +120,29 @@ function applyWeatherInfluence(weather: WeatherData | null) {
 
   // Create settings object with defaults
   const settings = { ...defaultSettings };
+
+  // Apply chaos mode modifications first
+  if (chaosMode) {
+    settings.velocityRange = { min: 20, max: 127 }; // Extreme dynamics
+    settings.noteDurationRange = { min: 50, max: 4000 }; // Wild duration range
+    settings.density = 0.9; // Very dense
+    settings.sustainProbability = 0.2; // More sustain chaos
+  }
+
+  // Apply insect burst mode modifications
+  if (insectBurstMode) {
+    settings.noteDurationRange = { min: 50, max: 200 }; // Very short, staccato
+    settings.density = 0.95; // Almost constant notes
+    settings.velocityRange = { min: 60, max: 110 }; // Moderate but consistent
+  }
+
+  // Apply hardcore mode modifications
+  if (hardcoreMode) {
+    settings.tempo = 160; // Fast tempo
+    settings.velocityRange = { min: 90, max: 127 }; // Loud and aggressive
+    settings.noteDurationRange = { min: 100, max: 800 }; // Short, punchy notes
+    settings.density = 0.85; // Dense but not overwhelming
+  }
 
   // Modify based on temperature
   if (weather.temperature < 0) {
@@ -178,6 +287,26 @@ function generateRandomNote(
   };
 }
 
+// Generate insect-inspired rapid burst patterns
+function generateInsectBurst(weather: WeatherData | null): Note[] {
+  const burstNotes: Note[] = [];
+  const burstLength = Math.floor(Math.random() * 8) + 3; // 3-10 notes in burst
+
+  // Pick a high register for insect-like sounds
+  const insectOctaveRange = { min: 5, max: 7 };
+
+  for (let i = 0; i < burstLength; i++) {
+    const note = generateRandomNote(weather, insectOctaveRange);
+    // Make notes very short and staccato
+    note.duration = 50 + Math.random() * 100; // 50-150ms
+    // Add some randomness to timing with micro-delays
+    note.velocity = 60 + Math.floor(Math.random() * 40); // 60-100 velocity
+    burstNotes.push(note);
+  }
+
+  return burstNotes;
+}
+
 // Function to generate chords in the current key and scale
 function generateChord(weather: WeatherData | null, numNotes = 3): Note[] {
   const settings = applyWeatherInfluence(weather);
@@ -207,21 +336,39 @@ function generateChord(weather: WeatherData | null, numNotes = 3): Note[] {
     duration: rootDuration,
   });
 
-  // Add other chord tones (using 3rds)
-  for (let i = 1; i < numNotes; i++) {
-    const nextIndex = (rootIndex + i * 2) % scaleNotes.length;
-    const nextNote = scaleNotes[nextIndex];
-    const nextOctave = rootOctave + (nextIndex < rootIndex ? 1 : 0);
+  // In chaos mode, generate cluster chords (adjacent notes)
+  if (chaosMode && Math.random() < 0.4) {
+    // Generate a cluster chord with adjacent semitones
+    const clusterSize = Math.floor(Math.random() * 4) + 3; // 3-6 notes
+    for (let i = 1; i < clusterSize; i++) {
+      const clusterNote = (rootNote + i) % 12;
+      const clusterOctave = rootOctave + Math.floor((rootNote + i) / 12);
 
-    chordNotes.push({
-      name: NOTES[nextNote],
-      octave: nextOctave,
-      midiNumber: nextNote + nextOctave * 12 + 12,
-      velocity:
-        Math.floor(Math.random() * 20) +
-        Math.max(40, settings.velocityRange.min - 20),
-      duration: chordNotes[0].duration * (0.8 + Math.random() * 0.4), // Slight variation from root
-    });
+      chordNotes.push({
+        name: NOTES[clusterNote],
+        octave: clusterOctave,
+        midiNumber: clusterNote + clusterOctave * 12 + 12,
+        velocity: Math.floor(Math.random() * 40) + settings.velocityRange.min,
+        duration: rootDuration * (0.7 + Math.random() * 0.6),
+      });
+    }
+  } else {
+    // Add other chord tones (using 3rds)
+    for (let i = 1; i < numNotes; i++) {
+      const nextIndex = (rootIndex + i * 2) % scaleNotes.length;
+      const nextNote = scaleNotes[nextIndex];
+      const nextOctave = rootOctave + (nextIndex < rootIndex ? 1 : 0);
+
+      chordNotes.push({
+        name: NOTES[nextNote],
+        octave: nextOctave,
+        midiNumber: nextNote + nextOctave * 12 + 12,
+        velocity:
+          Math.floor(Math.random() * 20) +
+          Math.max(40, settings.velocityRange.min - 20),
+        duration: chordNotes[0].duration * (0.8 + Math.random() * 0.4), // Slight variation from root
+      });
+    }
   }
 
   return chordNotes;
@@ -231,22 +378,32 @@ function generateChord(weather: WeatherData | null, numNotes = 3): Note[] {
 function maybeChangeMusicalContext(): void {
   const now = Date.now();
 
-  // Change approximately every 3-5 minutes
-  if (now - lastModeChangeTime > 3 * 60 * 1000 && Math.random() < 0.01) {
-    // 1% chance per check when we're past the minimum time
+  // More frequent changes in chaos mode
+  const changeIntervalMin = chaosMode ? 30000 : 180000; // 30s vs 3min
+  const changeProbability = chaosMode ? 0.05 : 0.01; // 5% vs 1%
+
+  // Change approximately every 3-5 minutes (or faster in chaos mode)
+  if (
+    now - lastModeChangeTime > changeIntervalMin &&
+    Math.random() < changeProbability
+  ) {
     const changeType = Math.floor(Math.random() * 3);
 
     if (changeType === 0) {
       // Change key
       currentKey = Math.floor(Math.random() * 12);
     } else if (changeType === 1) {
-      // Change scale
-      const scaleNames = Object.keys(SCALES) as Scale[];
+      // Change scale - prefer chaotic scales in chaos mode
+      const scaleNames: Scale[] = chaosMode
+        ? [...CHAOTIC_SCALES, "minor", "wholeTone"]
+        : (Object.keys(SCALES) as Scale[]);
       currentScale = scaleNames[Math.floor(Math.random() * scaleNames.length)];
     } else {
       // Change both
       currentKey = Math.floor(Math.random() * 12);
-      const scaleNames = Object.keys(SCALES) as Scale[];
+      const scaleNames: Scale[] = chaosMode
+        ? CHAOTIC_SCALES
+        : (Object.keys(SCALES) as Scale[]);
       currentScale = scaleNames[Math.floor(Math.random() * scaleNames.length)];
     }
 
@@ -295,9 +452,24 @@ export function generateMidiEvent(
   weather: WeatherData | null = null,
 ): MidiEvent {
   _noteCounter++;
+
+  // Check for mode changes
+  maybeEnterChaosMode();
+  maybeEnterInsectBurstMode();
+  maybeEnterHardcoreMode();
   maybeChangeMusicalContext();
 
   const settings = applyWeatherInfluence(weather);
+
+  // In insect burst mode, prioritize generating insect bursts
+  if (insectBurstMode && Math.random() < 0.6) {
+    return {
+      type: "insectBurst",
+      notes: generateInsectBurst(weather),
+      currentKey: NOTES[currentKey],
+      currentScale,
+    };
+  }
 
   // Randomly introduce silence based on density setting
   if (Math.random() > settings.density) {
@@ -318,55 +490,108 @@ export function generateMidiEvent(
     };
   }
 
-  // Decide between note, chord, or counterpoint
+  // Decide between note, chord, or counterpoint - chaos mode affects probabilities
   const eventType = Math.random();
 
-  if (eventType < 0.5) {
-    // Generate a single note
-    return {
-      type: "note",
-      note: generateRandomNote(weather),
-      currentKey: NOTES[currentKey],
-      currentScale,
-    };
-  } else if (eventType < 0.8) {
-    // Generate a chord
-    const chordSize = Math.floor(Math.random() * 3) + 3; // 3-5 notes
-    return {
-      type: "chord",
-      notes: generateChord(weather, chordSize),
-      currentKey: NOTES[currentKey],
-      currentScale,
-    };
-  } else {
-    // Generate counterpoint (2-4 notes across different registers)
-    const numVoices = Math.floor(Math.random() * 3) + 2; // 2-4 voices
-    const notes: Note[] = [];
+  if (chaosMode) {
+    // In chaos mode, favor more complex structures
+    if (eventType < 0.3) {
+      // Generate a single note
+      return {
+        type: "note",
+        note: generateRandomNote(weather),
+        currentKey: NOTES[currentKey],
+        currentScale,
+      };
+    } else if (eventType < 0.6) {
+      // Generate a chord (often cluster chords in chaos mode)
+      const chordSize = Math.floor(Math.random() * 4) + 3; // 3-6 notes
+      return {
+        type: "chord",
+        notes: generateChord(weather, chordSize),
+        currentKey: NOTES[currentKey],
+        currentScale,
+      };
+    } else {
+      // Generate counterpoint with more voices
+      const numVoices = Math.floor(Math.random() * 4) + 3; // 3-6 voices
+      const notes: Note[] = [];
 
-    for (let i = 0; i < numVoices; i++) {
-      // Assign each voice to a different register, influenced by weather
-      const settings = applyWeatherInfluence(weather);
-      const range = Math.min(settings.maxOctave - settings.minOctave, 5);
-      const segment = range / numVoices;
-      const minOctave = Math.max(
-        settings.minOctave,
-        Math.floor(settings.minOctave + i * segment),
-      );
-      const maxOctave = Math.min(
-        settings.maxOctave,
-        Math.ceil(settings.minOctave + (i + 1) * segment),
-      );
+      for (let i = 0; i < numVoices; i++) {
+        // Assign each voice to a different register, influenced by weather
+        const settings = applyWeatherInfluence(weather);
+        const range = Math.min(settings.maxOctave - settings.minOctave, 6);
+        const segment = range / numVoices;
+        const minOctave = Math.max(
+          settings.minOctave,
+          Math.floor(settings.minOctave + i * segment),
+        );
+        const maxOctave = Math.min(
+          settings.maxOctave,
+          Math.ceil(settings.minOctave + (i + 1) * segment),
+        );
 
-      notes.push(
-        generateRandomNote(weather, { min: minOctave, max: maxOctave }),
-      );
+        notes.push(
+          generateRandomNote(weather, { min: minOctave, max: maxOctave }),
+        );
+      }
+
+      return {
+        type: "counterpoint",
+        notes,
+        currentKey: NOTES[currentKey],
+        currentScale,
+      };
     }
+  } else {
+    // Normal mode probabilities
+    if (eventType < 0.5) {
+      // Generate a single note
+      return {
+        type: "note",
+        note: generateRandomNote(weather),
+        currentKey: NOTES[currentKey],
+        currentScale,
+      };
+    } else if (eventType < 0.8) {
+      // Generate a chord
+      const chordSize = Math.floor(Math.random() * 3) + 3; // 3-5 notes
+      return {
+        type: "chord",
+        notes: generateChord(weather, chordSize),
+        currentKey: NOTES[currentKey],
+        currentScale,
+      };
+    } else {
+      // Generate counterpoint (2-4 notes across different registers)
+      const numVoices = Math.floor(Math.random() * 3) + 2; // 2-4 voices
+      const notes: Note[] = [];
 
-    return {
-      type: "counterpoint",
-      notes,
-      currentKey: NOTES[currentKey],
-      currentScale,
-    };
+      for (let i = 0; i < numVoices; i++) {
+        // Assign each voice to a different register, influenced by weather
+        const settings = applyWeatherInfluence(weather);
+        const range = Math.min(settings.maxOctave - settings.minOctave, 5);
+        const segment = range / numVoices;
+        const minOctave = Math.max(
+          settings.minOctave,
+          Math.floor(settings.minOctave + i * segment),
+        );
+        const maxOctave = Math.min(
+          settings.maxOctave,
+          Math.ceil(settings.minOctave + (i + 1) * segment),
+        );
+
+        notes.push(
+          generateRandomNote(weather, { min: minOctave, max: maxOctave }),
+        );
+      }
+
+      return {
+        type: "counterpoint",
+        notes,
+        currentKey: NOTES[currentKey],
+        currentScale,
+      };
+    }
   }
 }

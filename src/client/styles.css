@@ -1,7 +1,7 @@
 /* Retro computer UI theme */
 @font-face {
-  font-family: 'VT323';
-  src: url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+  font-family: "VT323";
+  src: url("https://fonts.googleapis.com/css2?family=VT323&display=swap");
   font-display: swap;
 }
 
@@ -11,7 +11,7 @@
   --accent-color: #00aa00;
   --panel-bg: #001100;
   --border-color: #33ff33;
-  --main-font: 'VT323', monospace;
+  --main-font: "VT323", monospace;
   --button-hover: #004400;
   --button-active: #008800;
   --viz-bg: #001800;
@@ -161,7 +161,8 @@ h1 {
 }
 
 @keyframes loading-pulse {
-  0%, 100% {
+  0%,
+  100% {
     background-color: var(--panel-bg);
   }
   50% {
@@ -307,7 +308,8 @@ h1 {
 }
 
 /* Accessibility improvements */
-button:focus, select:focus {
+button:focus,
+select:focus {
   outline: 3px solid var(--text-color);
   outline-offset: 2px;
 }
@@ -317,11 +319,11 @@ button:focus, select:focus {
     min-width: auto;
     width: 100%;
   }
-  
+
   .controls {
     flex-direction: column;
   }
-  
+
   .info-panel {
     grid-template-columns: 1fr;
   }

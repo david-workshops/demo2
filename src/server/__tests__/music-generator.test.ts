@@ -19,7 +19,7 @@ describe("Music Generator", () => {
       expect(event.note.duration).toBeGreaterThan(0);
       expect(event.currentKey).toBeDefined();
       expect(event.currentScale).toBeDefined();
-    } else if (event.type === "chord" || event.type === "counterpoint") {
+    } else if (event.type === "chord" || event.type === "counterpoint" || event.type === "insectBurst") {
       expect(event.notes).toBeInstanceOf(Array);
       expect(event.notes.length).toBeGreaterThan(0);
       expect(event.currentKey).toBeDefined();
