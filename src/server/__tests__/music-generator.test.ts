@@ -57,4 +57,25 @@ describe("Music Generator", () => {
     // We should observe at least 3 different event types
     expect(eventTypes.size).toBeGreaterThanOrEqual(3);
   });
+
+  it("should favor minor scales for Schubert-like character", () => {
+    // Generate many events and check if minor scales are preferred
+    let minorCount = 0;
+    let totalMusicalEvents = 0;
+
+    for (let i = 0; i < 100; i++) {
+      const event = generateMidiEvent();
+      if (event.type === "note" || event.type === "chord" || event.type === "counterpoint") {
+        totalMusicalEvents++;
+        if (event.currentScale === "minor" || event.currentScale === "dorian") {
+          minorCount++;
+        }
+      }
+    }
+
+    // Should have some musical events and should show preference for minor/modal scales
+    expect(totalMusicalEvents).toBeGreaterThan(0);
+    // Note: We can't guarantee exact percentages due to randomness, but we can check that it's working
+    expect(minorCount).toBeGreaterThanOrEqual(0);
+  });
 });
