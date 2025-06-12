@@ -3,6 +3,7 @@ import http from "http";
 import { Server } from "socket.io";
 import path from "path";
 import { generateMidiEvent } from "./music-generator";
+import { generateHauntedFurnitureEvent } from "./haunted-furniture-generator";
 import { WeatherData } from "../shared/types";
 import dotenv from "dotenv";
 import { freepikService } from "./freepik-service";
@@ -55,9 +56,10 @@ io.on("connection", (socket) => {
 
       // Generate MIDI events at regular intervals
       intervalId = setInterval(() => {
-        const event = generateMidiEvent(currentWeather);
+        // Use the haunted furniture generator for issue #39
+        const event = generateHauntedFurnitureEvent(currentWeather);
         socket.emit("midi", event);
-      }, 100); // Generate events every 100ms (adjust as needed)
+      }, 120); // Slightly slower interval for more atmospheric timing
     }
   });
 
