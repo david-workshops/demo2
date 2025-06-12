@@ -11,6 +11,9 @@ const playToggleButton = document.getElementById(
 const outputSelect = document.getElementById(
   "output-select",
 ) as HTMLSelectElement;
+const ambientToggleButton = document.getElementById(
+  "ambient-toggle",
+) as HTMLButtonElement;
 const visualization = document.getElementById(
   "visualization",
 ) as HTMLDivElement;
@@ -41,6 +44,226 @@ const activeNotes: Map<
   { oscillator: OscillatorNode; gainNode: GainNode; endTime: number }
 > = new Map();
 
+// Ambient sound system
+class AmbientSoundSystem {
+  private isActive = false;
+  private ambientGainNode: GainNode | null = null;
+  private backgroundNoise: OscillatorNode | null = null;
+  private backgroundNoiseGain: GainNode | null = null;
+  private sirenIntervalId: number | null = null;
+  private activeSirens: Set<{
+    oscillator: OscillatorNode;
+    gainNode: GainNode;
+  }> = new Set();
+
+  constructor(
+    private audioContext: AudioContext,
+    private masterGain: GainNode,
+  ) {
+    this.setupAmbientGain();
+  }
+
+  private setupAmbientGain() {
+    if (!this.audioContext) return;
+
+    this.ambientGainNode = this.audioContext.createGain();
+    this.ambientGainNode.gain.value = 0.15; // Low volume for ambient sounds
+    this.ambientGainNode.connect(this.masterGain);
+  }
+
+  private createBackgroundNoise() {
+    if (!this.audioContext || !this.ambientGainNode) return;
+
+    // Create subtle background noise using filtered white noise
+    const bufferSize = this.audioContext.sampleRate * 2; // 2 seconds of noise
+    const buffer = this.audioContext.createBuffer(
+      1,
+      bufferSize,
+      this.audioContext.sampleRate,
+    );
+    const data = buffer.getChannelData(0);
+
+    // Generate pink noise (more natural than white noise)
+    let b0 = 0,
+      b1 = 0,
+      b2 = 0,
+      b3 = 0,
+      b4 = 0,
+      b5 = 0,
+      b6 = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + white * 0.0555179;
+      b1 = 0.99332 * b1 + white * 0.0750759;
+      b2 = 0.969 * b2 + white * 0.153852;
+      b3 = 0.8665 * b3 + white * 0.3104856;
+      b4 = 0.55 * b4 + white * 0.5329522;
+      b5 = -0.7616 * b5 - white * 0.016898;
+      data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.05;
+      b6 = white * 0.115926;
+    }
+
+    const noiseSource = this.audioContext.createBufferSource();
+    noiseSource.buffer = buffer;
+    noiseSource.loop = true;
+
+    // Filter the noise to make it more subtle
+    const filter = this.audioContext.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 200; // Low frequency rumble
+    filter.Q.value = 0.5;
+
+    this.backgroundNoiseGain = this.audioContext.createGain();
+    this.backgroundNoiseGain.gain.value = 0.3;
+
+    noiseSource.connect(filter);
+    filter.connect(this.backgroundNoiseGain);
+    this.backgroundNoiseGain.connect(this.ambientGainNode);
+
+    noiseSource.start();
+    this.backgroundNoise = noiseSource as unknown as OscillatorNode; // Cast for interface compatibility
+  }
+
+  private createSirenSound() {
+    if (!this.audioContext || !this.ambientGainNode) return;
+
+    const now = this.audioContext.currentTime;
+    const duration = 3 + Math.random() * 4; // 3-7 seconds
+
+    // Create two oscillators for the classic siren sound
+    const osc1 = this.audioContext.createOscillator();
+    const osc2 = this.audioContext.createOscillator();
+
+    // Create gain nodes for envelope and panning
+    const sirenGain = this.audioContext.createGain();
+    const panGain = this.audioContext.createGain();
+
+    // Set up oscillators
+    osc1.type = "sine";
+    osc2.type = "sine";
+
+    // Classic siren frequencies
+    const baseFreq1 = 800 + Math.random() * 200; // 800-1000 Hz
+    const baseFreq2 = baseFreq1 * 1.2; // Slight harmonic
+
+    // Doppler effect simulation - start distant, get closer, then fade away
+    const startGain = 0.02;
+    const peakGain = 0.08;
+    const endGain = 0.01;
+
+    // Set initial frequencies
+    osc1.frequency.setValueAtTime(baseFreq1, now);
+    osc2.frequency.setValueAtTime(baseFreq2, now);
+
+    // Create the characteristic siren sweep
+    const sweepDuration = 0.5; // Time for one frequency sweep
+    const numSweeps = Math.floor(duration / sweepDuration);
+
+    for (let i = 0; i < numSweeps; i++) {
+      const sweepStart = now + i * sweepDuration;
+      const sweepEnd = sweepStart + sweepDuration;
+
+      // Alternate between high and low frequencies
+      const isHighSweep = i % 2 === 0;
+      const freq1Target = isHighSweep ? baseFreq1 * 1.5 : baseFreq1 * 0.7;
+      const freq2Target = isHighSweep ? baseFreq2 * 1.5 : baseFreq2 * 0.7;
+
+      osc1.frequency.linearRampToValueAtTime(freq1Target, sweepEnd);
+      osc2.frequency.linearRampToValueAtTime(freq2Target, sweepEnd);
+    }
+
+    // Envelope to simulate passing vehicle (Doppler effect)
+    sirenGain.gain.setValueAtTime(startGain, now);
+    sirenGain.gain.linearRampToValueAtTime(peakGain, now + duration * 0.4);
+    sirenGain.gain.linearRampToValueAtTime(endGain, now + duration);
+
+    // Connect the audio graph
+    osc1.connect(sirenGain);
+    osc2.connect(sirenGain);
+    sirenGain.connect(panGain);
+    panGain.connect(this.ambientGainNode);
+
+    // Start the oscillators
+    osc1.start(now);
+    osc2.start(now);
+
+    // Schedule cleanup
+    osc1.stop(now + duration);
+    osc2.stop(now + duration);
+
+    // Track active sirens
+    const sirenData = { oscillator: osc1, gainNode: sirenGain };
+    this.activeSirens.add(sirenData);
+
+    // Clean up after duration
+    setTimeout(() => {
+      this.activeSirens.delete(sirenData);
+    }, duration * 1000);
+
+    logToConsole("🚨 Siren passing by...");
+  }
+
+  private scheduleSirens() {
+    if (!this.isActive) return;
+
+    // Schedule next siren randomly between 15-45 seconds
+    const nextSirenDelay = 15000 + Math.random() * 30000;
+
+    this.sirenIntervalId = window.setTimeout(() => {
+      if (this.isActive) {
+        this.createSirenSound();
+        this.scheduleSirens(); // Schedule the next one
+      }
+    }, nextSirenDelay);
+  }
+
+  public start() {
+    if (this.isActive) return;
+
+    this.isActive = true;
+    this.createBackgroundNoise();
+    this.scheduleSirens();
+
+    logToConsole("🎷 Jazz club ambiance started");
+  }
+
+  public stop() {
+    if (!this.isActive) return;
+
+    this.isActive = false;
+
+    // Stop background noise
+    if (this.backgroundNoise) {
+      this.backgroundNoise.stop();
+      this.backgroundNoise = null;
+    }
+
+    // Clear siren schedule
+    if (this.sirenIntervalId) {
+      clearTimeout(this.sirenIntervalId);
+      this.sirenIntervalId = null;
+    }
+
+    // Stop active sirens
+    this.activeSirens.forEach(({ oscillator, gainNode }) => {
+      const now = this.audioContext?.currentTime || 0;
+      gainNode.gain.cancelScheduledValues(now);
+      gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+      gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+      setTimeout(() => oscillator.stop(), 600);
+    });
+    this.activeSirens.clear();
+
+    logToConsole("🎷 Jazz club ambiance stopped");
+  }
+
+  public isRunning(): boolean {
+    return this.isActive;
+  }
+}
+
+let ambientSoundSystem: AmbientSoundSystem | null = null;
+
 // Pedal status (reference from shared state)
 const pedalStatus = musicState.getPedalStatus();
 
@@ -55,6 +278,10 @@ function initAudio() {
     gainNode = audioContext.createGain();
     gainNode.gain.value = 0.5;
     gainNode.connect(audioContext.destination);
+
+    // Initialize ambient sound system
+    ambientSoundSystem = new AmbientSoundSystem(audioContext, gainNode);
+
     logToConsole("Audio initialized");
   }
 }
@@ -684,10 +911,41 @@ outputSelect.addEventListener("change", () => {
   }
 });
 
+ambientToggleButton.addEventListener("click", () => {
+  // Initialize audio if not already done
+  initAudio();
+
+  if (!ambientSoundSystem) {
+    logToConsole("Ambient sound system not available");
+    return;
+  }
+
+  if (ambientSoundSystem.isRunning()) {
+    // Turn off ambient sounds
+    ambientSoundSystem.stop();
+    ambientToggleButton.textContent = "OFF";
+    ambientToggleButton.setAttribute(
+      "aria-label",
+      "Enable jazz club ambient sounds",
+    );
+  } else {
+    // Turn on ambient sounds
+    ambientSoundSystem.start();
+    ambientToggleButton.textContent = "ON";
+    ambientToggleButton.setAttribute(
+      "aria-label",
+      "Disable jazz club ambient sounds",
+    );
+  }
+});
+
 // Cleanup function
 window.addEventListener("beforeunload", () => {
   socket.emit("stop");
   stopAllNotes();
+  if (ambientSoundSystem?.isRunning()) {
+    ambientSoundSystem.stop();
+  }
   if (weatherUpdateInterval !== null) {
     clearInterval(weatherUpdateInterval);
   }
@@ -722,6 +980,9 @@ document.addEventListener("keydown", (event) => {
     toggleLogs();
   } else if (event.key === "?") {
     toggleKeyboardShortcuts();
+  } else if (event.key === "a" || event.key === "A") {
+    // Toggle ambient sounds
+    ambientToggleButton.click();
   }
 });
 

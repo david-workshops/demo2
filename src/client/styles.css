@@ -160,6 +160,11 @@ h1 {
   cursor: wait;
 }
 
+.btn.btn-small {
+  padding: 6px 12px;
+  font-size: 1rem;
+}
+
 @keyframes loading-pulse {
   0%, 100% {
     background-color: var(--panel-bg);
