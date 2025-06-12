@@ -2,7 +2,7 @@ import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import path from "path";
-import { generateMidiEvent } from "./music-generator";
+import { generateMidiEvent, startFacePlantingStory } from "./music-generator";
 import { WeatherData } from "../shared/types";
 import dotenv from "dotenv";
 import { freepikService } from "./freepik-service";
@@ -70,6 +70,13 @@ io.on("connection", (socket) => {
 
     // Update Freepik service with weather data
     freepikService.updateWeather(weatherData);
+  });
+
+  // Start the face planting story
+  socket.on("start-face-planting-story", () => {
+    console.log("Starting face planting story");
+    startFacePlantingStory();
+    socket.emit("story-started", { duration: 45000 }); // Tell client story duration
   });
 
   // Handle notes updates for Freepik service
