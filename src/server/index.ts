@@ -46,6 +46,7 @@ io.on("connection", (socket) => {
   let intervalId: NodeJS.Timeout | null = null;
   let currentWeather: WeatherData | null = null;
   let freepikIntervalId: NodeJS.Timeout | null = null;
+  let houseMode = false;
 
   // Start streaming MIDI events
   socket.on("start", () => {
@@ -54,10 +55,43 @@ io.on("connection", (socket) => {
       console.log("Starting MIDI stream");
 
       // Generate MIDI events at regular intervals
+      intervalId = setInterval(
+        () => {
+          const event = generateMidiEvent(currentWeather, houseMode);
+          socket.emit("midi", event);
+        },
+        houseMode ? 120 : 100,
+      ); // Slightly faster tempo for house music
+    }
+  });
+
+  // Enable house music mode
+  socket.on("enable-house", () => {
+    console.log("House music mode enabled");
+    houseMode = true;
+
+    // Restart the interval with house tempo if currently playing
+    if (playing && intervalId) {
+      clearInterval(intervalId);
       intervalId = setInterval(() => {
-        const event = generateMidiEvent(currentWeather);
+        const event = generateMidiEvent(currentWeather, houseMode);
         socket.emit("midi", event);
-      }, 100); // Generate events every 100ms (adjust as needed)
+      }, 120); // House music tempo
+    }
+  });
+
+  // Disable house music mode
+  socket.on("disable-house", () => {
+    console.log("House music mode disabled");
+    houseMode = false;
+
+    // Restart the interval with normal tempo if currently playing
+    if (playing && intervalId) {
+      clearInterval(intervalId);
+      intervalId = setInterval(() => {
+        const event = generateMidiEvent(currentWeather, houseMode);
+        socket.emit("midi", event);
+      }, 100); // Normal tempo
     }
   });
 
