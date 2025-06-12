@@ -298,7 +298,7 @@ function playNote(note: Note) {
   if (!audioContext || !gainNode) return;
 
   const soundType = soundSelect.value;
-  
+
   switch (soundType) {
     case "foghorn":
       playFoghornNote(note);
@@ -389,10 +389,10 @@ function playFoghornNote(note: Note) {
   const baseFreq = Math.max(midiToFrequency(note.midiNumber), 50); // Ensure minimum frequency
   oscillator1.type = "sawtooth";
   oscillator1.frequency.value = baseFreq * 0.5; // Sub-harmonic
-  
+
   oscillator2.type = "square";
   oscillator2.frequency.value = baseFreq;
-  
+
   oscillator3.type = "sawtooth";
   oscillator3.frequency.value = baseFreq * 1.5; // Slight harmonic
 
@@ -401,7 +401,7 @@ function playFoghornNote(note: Note) {
   const noteGain2 = audioContext.createGain();
   const noteGain3 = audioContext.createGain();
   const masterGain = audioContext.createGain();
-  
+
   noteGain1.gain.value = 0;
   noteGain2.gain.value = 0;
   noteGain3.gain.value = 0;
@@ -424,14 +424,14 @@ function playFoghornNote(note: Note) {
   // Attack
   masterGain.gain.setValueAtTime(0, now);
   masterGain.gain.linearRampToValueAtTime(velocityGain, now + attackTime);
-  
+
   // Individual oscillator gains
   noteGain1.gain.setValueAtTime(0, now);
   noteGain1.gain.linearRampToValueAtTime(velocityGain * 0.6, now + attackTime);
-  
+
   noteGain2.gain.setValueAtTime(0, now);
   noteGain2.gain.linearRampToValueAtTime(velocityGain * 0.8, now + attackTime);
-  
+
   noteGain3.gain.setValueAtTime(0, now);
   noteGain3.gain.linearRampToValueAtTime(velocityGain * 0.4, now + attackTime);
 
@@ -486,7 +486,7 @@ function playKittenNote(note: Note) {
   const baseFreq = Math.min(midiToFrequency(note.midiNumber) * 2, 2000); // Higher pitch, cap at 2kHz
   oscillator1.type = "triangle"; // Softer sound
   oscillator1.frequency.value = baseFreq;
-  
+
   oscillator2.type = "sine";
   oscillator2.frequency.value = baseFreq * 2; // Harmonic for brightness
 
@@ -494,7 +494,7 @@ function playKittenNote(note: Note) {
   const noteGain1 = audioContext.createGain();
   const noteGain2 = audioContext.createGain();
   const masterGain = audioContext.createGain();
-  
+
   noteGain1.gain.value = 0;
   noteGain2.gain.value = 0;
   masterGain.gain.value = 0;
@@ -514,11 +514,11 @@ function playKittenNote(note: Note) {
   // Attack
   masterGain.gain.setValueAtTime(0, now);
   masterGain.gain.linearRampToValueAtTime(velocityGain, now + attackTime);
-  
+
   // Individual oscillator gains
   noteGain1.gain.setValueAtTime(0, now);
   noteGain1.gain.linearRampToValueAtTime(velocityGain * 0.8, now + attackTime);
-  
+
   noteGain2.gain.setValueAtTime(0, now);
   noteGain2.gain.linearRampToValueAtTime(velocityGain * 0.3, now + attackTime);
 
@@ -528,15 +528,18 @@ function playKittenNote(note: Note) {
   lfo.type = "sine";
   lfo.frequency.value = 6; // 6 Hz vibrato
   lfoGain.gain.value = baseFreq * 0.02; // 2% frequency modulation
-  
+
   lfo.connect(lfoGain);
   lfoGain.connect(oscillator1.frequency);
   lfo.start(now);
-  lfo.stop(now + (note.duration / 1000) + 0.1);
+  lfo.stop(now + note.duration / 1000 + 0.1);
 
   // Calculate end time
   const sustainMultiplier = pedals.sustain > 0.5 ? 1.5 : 1; // Shorter sustain for kitten
-  const noteDuration = Math.min((note.duration / 1000) * sustainMultiplier, 1.0); // Max 1 second
+  const noteDuration = Math.min(
+    (note.duration / 1000) * sustainMultiplier,
+    1.0,
+  ); // Max 1 second
   const endTime = now + noteDuration;
 
   // Release
