@@ -8,12 +8,16 @@ const socket = musicState.getSocket();
 const playToggleButton = document.getElementById(
   "play-toggle-btn",
 ) as HTMLButtonElement;
+const jungleToggleButton = document.getElementById(
+  "jungle-toggle-btn",
+) as HTMLButtonElement;
 const outputSelect = document.getElementById(
   "output-select",
 ) as HTMLSelectElement;
 const visualization = document.getElementById(
   "visualization",
 ) as HTMLDivElement;
+const currentModeDisplay = document.getElementById("current-mode") as HTMLElement;
 const currentKeyDisplay = document.getElementById("current-key") as HTMLElement;
 const currentScaleDisplay = document.getElementById(
   "current-scale",
@@ -47,6 +51,9 @@ const pedalStatus = musicState.getPedalStatus();
 // Weather state
 let weatherUpdateInterval: number | null = null;
 const WEATHER_UPDATE_INTERVAL = 10 * 60 * 1000; // 10 minutes
+
+// Jungle symphony state
+let jungleSymphonyEnabled = false;
 
 // Initialize audio
 function initAudio() {
@@ -604,6 +611,8 @@ musicState.subscribe((event: MusicStateEvent) => {
 // Socket connection events
 socket.on("connect", () => {
   logToConsole("Connected to server");
+  // Request current jungle symphony status
+  socket.emit("get-jungle-symphony-status");
 });
 
 socket.on("disconnect", () => {
@@ -617,7 +626,29 @@ socket.on("disconnect", () => {
   // Reset button state on disconnect
   playToggleButton.textContent = "PLAY";
   playToggleButton.setAttribute("aria-label", "Start piano playback");
+  
+  // Reset jungle symphony state on disconnect
+  jungleSymphonyEnabled = false;
+  updateJungleSymphonyDisplay();
 });
+
+// Handle jungle symphony status updates
+socket.on("jungle-symphony-status", (data: { enabled: boolean }) => {
+  jungleSymphonyEnabled = data.enabled;
+  updateJungleSymphonyDisplay();
+  logToConsole(`Jungle symphony ${data.enabled ? "enabled" : "disabled"}`);
+});
+
+// Function to update jungle symphony display
+function updateJungleSymphonyDisplay() {
+  currentModeDisplay.textContent = jungleSymphonyEnabled ? "Jungle Symphony" : "Normal";
+  jungleToggleButton.classList.toggle("active", jungleSymphonyEnabled);
+  jungleToggleButton.textContent = jungleSymphonyEnabled ? "EXIT JUNGLE" : "JUNGLE SYMPHONY";
+  jungleToggleButton.setAttribute(
+    "aria-label", 
+    jungleSymphonyEnabled ? "Exit jungle symphony mode" : "Enter jungle symphony mode"
+  );
+}
 
 // Event listeners
 playToggleButton.addEventListener("click", async () => {
@@ -681,6 +712,15 @@ outputSelect.addEventListener("change", () => {
         logToConsole("MIDI not available, falling back to browser audio");
       }
     });
+  }
+});
+
+// Jungle symphony toggle button
+jungleToggleButton.addEventListener("click", () => {
+  if (jungleSymphonyEnabled) {
+    socket.emit("disable-jungle-symphony");
+  } else {
+    socket.emit("enable-jungle-symphony");
   }
 });
 
