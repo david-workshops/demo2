@@ -11,6 +11,9 @@ const playToggleButton = document.getElementById(
 const outputSelect = document.getElementById(
   "output-select",
 ) as HTMLSelectElement;
+const soundSelect = document.getElementById(
+  "sound-select",
+) as HTMLSelectElement;
 const visualization = document.getElementById(
   "visualization",
 ) as HTMLDivElement;
@@ -294,6 +297,25 @@ function playNote(note: Note) {
   if (!audioContext || !gainNode) initAudio();
   if (!audioContext || !gainNode) return;
 
+  const soundType = soundSelect.value;
+
+  switch (soundType) {
+    case "foghorn":
+      playFoghornNote(note);
+      break;
+    case "kitten":
+      playKittenNote(note);
+      break;
+    default:
+      playPianoNote(note);
+      break;
+  }
+}
+
+// Play a piano note (original implementation)
+function playPianoNote(note: Note) {
+  if (!audioContext || !gainNode) return;
+
   const now = audioContext.currentTime;
   const pedals = musicState.getPedalStatus();
 
@@ -336,6 +358,204 @@ function playNote(note: Note) {
   activeNotes.set(note.midiNumber, {
     oscillator,
     gainNode: noteGain,
+    endTime: endTime,
+  });
+
+  // Schedule cleanup
+  setTimeout(
+    () => {
+      activeNotes.delete(note.midiNumber);
+    },
+    (noteDuration + 0.2) * 1000,
+  );
+
+  // Create visualization element
+  createNoteVisualization(note);
+}
+
+// Play a foghorn note with deep, low-frequency sound
+function playFoghornNote(note: Note) {
+  if (!audioContext || !gainNode) return;
+
+  const now = audioContext.currentTime;
+  const pedals = musicState.getPedalStatus();
+
+  // Create multiple oscillators for rich foghorn sound
+  const oscillator1 = audioContext.createOscillator();
+  const oscillator2 = audioContext.createOscillator();
+  const oscillator3 = audioContext.createOscillator();
+
+  // Deep, low frequencies for foghorn effect
+  const baseFreq = Math.max(midiToFrequency(note.midiNumber), 50); // Ensure minimum frequency
+  oscillator1.type = "sawtooth";
+  oscillator1.frequency.value = baseFreq * 0.5; // Sub-harmonic
+
+  oscillator2.type = "square";
+  oscillator2.frequency.value = baseFreq;
+
+  oscillator3.type = "sawtooth";
+  oscillator3.frequency.value = baseFreq * 1.5; // Slight harmonic
+
+  // Create note-specific gain nodes for each oscillator
+  const noteGain1 = audioContext.createGain();
+  const noteGain2 = audioContext.createGain();
+  const noteGain3 = audioContext.createGain();
+  const masterGain = audioContext.createGain();
+
+  noteGain1.gain.value = 0;
+  noteGain2.gain.value = 0;
+  noteGain3.gain.value = 0;
+  masterGain.gain.value = 0;
+
+  // Connect nodes
+  oscillator1.connect(noteGain1);
+  oscillator2.connect(noteGain2);
+  oscillator3.connect(noteGain3);
+  noteGain1.connect(masterGain);
+  noteGain2.connect(masterGain);
+  noteGain3.connect(masterGain);
+  masterGain.connect(gainNode);
+
+  // Apply foghorn envelope - slow attack, long sustain, slow release
+  const velocityGain = (note.velocity / 127) * 0.8; // Slightly quieter
+  const attackTime = 0.2; // Slow attack for foghorn
+  const releaseTime = 1.0; // Long release for foghorn
+
+  // Attack
+  masterGain.gain.setValueAtTime(0, now);
+  masterGain.gain.linearRampToValueAtTime(velocityGain, now + attackTime);
+
+  // Individual oscillator gains
+  noteGain1.gain.setValueAtTime(0, now);
+  noteGain1.gain.linearRampToValueAtTime(velocityGain * 0.6, now + attackTime);
+
+  noteGain2.gain.setValueAtTime(0, now);
+  noteGain2.gain.linearRampToValueAtTime(velocityGain * 0.8, now + attackTime);
+
+  noteGain3.gain.setValueAtTime(0, now);
+  noteGain3.gain.linearRampToValueAtTime(velocityGain * 0.4, now + attackTime);
+
+  // Calculate end time
+  const sustainMultiplier = pedals.sustain > 0.5 ? 4 : 2; // Longer sustain for foghorn
+  const noteDuration = (note.duration / 1000) * sustainMultiplier;
+  const endTime = now + noteDuration;
+
+  // Release
+  masterGain.gain.setValueAtTime(velocityGain, endTime - releaseTime);
+  masterGain.gain.linearRampToValueAtTime(0, endTime);
+
+  // Start and schedule stop
+  oscillator1.start(now);
+  oscillator2.start(now);
+  oscillator3.start(now);
+  oscillator1.stop(endTime + 0.1);
+  oscillator2.stop(endTime + 0.1);
+  oscillator3.stop(endTime + 0.1);
+
+  // Store active note (using first oscillator as reference)
+  activeNotes.set(note.midiNumber, {
+    oscillator: oscillator1,
+    gainNode: masterGain,
+    endTime: endTime,
+  });
+
+  // Schedule cleanup
+  setTimeout(
+    () => {
+      activeNotes.delete(note.midiNumber);
+    },
+    (noteDuration + 0.2) * 1000,
+  );
+
+  // Create visualization element
+  createNoteVisualization(note);
+}
+
+// Play a kitten meow note with high-pitched, cute sound
+function playKittenNote(note: Note) {
+  if (!audioContext || !gainNode) return;
+
+  const now = audioContext.currentTime;
+  const pedals = musicState.getPedalStatus();
+
+  // Create oscillators for kitten meow
+  const oscillator1 = audioContext.createOscillator();
+  const oscillator2 = audioContext.createOscillator();
+
+  // High frequencies for kitten meow effect
+  const baseFreq = Math.min(midiToFrequency(note.midiNumber) * 2, 2000); // Higher pitch, cap at 2kHz
+  oscillator1.type = "triangle"; // Softer sound
+  oscillator1.frequency.value = baseFreq;
+
+  oscillator2.type = "sine";
+  oscillator2.frequency.value = baseFreq * 2; // Harmonic for brightness
+
+  // Create note-specific gain nodes
+  const noteGain1 = audioContext.createGain();
+  const noteGain2 = audioContext.createGain();
+  const masterGain = audioContext.createGain();
+
+  noteGain1.gain.value = 0;
+  noteGain2.gain.value = 0;
+  masterGain.gain.value = 0;
+
+  // Connect nodes
+  oscillator1.connect(noteGain1);
+  oscillator2.connect(noteGain2);
+  noteGain1.connect(masterGain);
+  noteGain2.connect(masterGain);
+  masterGain.connect(gainNode);
+
+  // Apply kitten meow envelope - quick attack, short sustain with vibrato
+  const velocityGain = (note.velocity / 127) * 0.6; // Quieter for cute effect
+  const attackTime = 0.05; // Quick attack
+  const releaseTime = 0.2; // Quick release
+
+  // Attack
+  masterGain.gain.setValueAtTime(0, now);
+  masterGain.gain.linearRampToValueAtTime(velocityGain, now + attackTime);
+
+  // Individual oscillator gains
+  noteGain1.gain.setValueAtTime(0, now);
+  noteGain1.gain.linearRampToValueAtTime(velocityGain * 0.8, now + attackTime);
+
+  noteGain2.gain.setValueAtTime(0, now);
+  noteGain2.gain.linearRampToValueAtTime(velocityGain * 0.3, now + attackTime);
+
+  // Add vibrato effect for more realistic meow
+  const lfo = audioContext.createOscillator();
+  const lfoGain = audioContext.createGain();
+  lfo.type = "sine";
+  lfo.frequency.value = 6; // 6 Hz vibrato
+  lfoGain.gain.value = baseFreq * 0.02; // 2% frequency modulation
+
+  lfo.connect(lfoGain);
+  lfoGain.connect(oscillator1.frequency);
+  lfo.start(now);
+  lfo.stop(now + note.duration / 1000 + 0.1);
+
+  // Calculate end time
+  const sustainMultiplier = pedals.sustain > 0.5 ? 1.5 : 1; // Shorter sustain for kitten
+  const noteDuration = Math.min(
+    (note.duration / 1000) * sustainMultiplier,
+    1.0,
+  ); // Max 1 second
+  const endTime = now + noteDuration;
+
+  // Release
+  masterGain.gain.setValueAtTime(velocityGain, endTime - releaseTime);
+  masterGain.gain.linearRampToValueAtTime(0, endTime);
+
+  // Start and schedule stop
+  oscillator1.start(now);
+  oscillator2.start(now);
+  oscillator1.stop(endTime + 0.1);
+  oscillator2.stop(endTime + 0.1);
+
+  // Store active note (using first oscillator as reference)
+  activeNotes.set(note.midiNumber, {
+    oscillator: oscillator1,
+    gainNode: masterGain,
     endTime: endTime,
   });
 
