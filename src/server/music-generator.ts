@@ -24,6 +24,11 @@ let _noteCounter = 0;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let density = 0.7; // Probability of generating a note vs. silence
 
+// Face planting story state
+let storyMode = false;
+let storyStartTime = 0;
+const STORY_DURATION = 45000; // 45 seconds for the complete story
+
 // Apply weather influence to music parameters
 function applyWeatherInfluence(weather: WeatherData | null) {
   // Reset to defaults if no weather data
@@ -295,6 +300,20 @@ export function generateMidiEvent(
   weather: WeatherData | null = null,
 ): MidiEvent {
   _noteCounter++;
+  
+  // Check if we're in story mode
+  if (storyMode) {
+    const elapsed = Date.now() - storyStartTime;
+    if (elapsed >= STORY_DURATION) {
+      // Story finished, return to normal mode
+      storyMode = false;
+      return { type: "allNotesOff" };
+    }
+    
+    // Generate story-specific events
+    return generateStoryEvent(elapsed);
+  }
+  
   maybeChangeMusicalContext();
 
   const settings = applyWeatherInfluence(weather);
@@ -369,4 +388,219 @@ export function generateMidiEvent(
       currentScale,
     };
   }
+}
+
+// Function to start the face planting story
+export function startFacePlantingStory(): void {
+  storyMode = true;
+  storyStartTime = Date.now();
+  // Set story-appropriate musical context
+  currentKey = 2; // D major/minor for dramatic effect
+  currentScale = "minor"; // Start in minor for tension
+}
+
+// Generate story-specific musical events
+function generateStoryEvent(elapsed: number): MidiEvent {
+  const storyPhase = getStoryPhase(elapsed);
+  
+  switch (storyPhase) {
+    case "approach":
+      return generateApproachMusic();
+    case "nearFall":
+      return generateNearFallMusic();
+    case "save":
+      return generateSaveMusic();
+    case "relief":
+      return generateReliefMusic();
+    case "friendlyPerson":
+      return generateFriendlyPersonMusic();
+    case "conversation":
+      return generateConversationMusic();
+    default:
+      return { type: "silence", duration: 200 };
+  }
+}
+
+// Determine which phase of the story we're in
+function getStoryPhase(elapsed: number): string {
+  if (elapsed < 8000) return "approach"; // 0-8s: Walking along
+  if (elapsed < 15000) return "nearFall"; // 8-15s: Almost falling
+  if (elapsed < 20000) return "save"; // 15-20s: Saving yourself
+  if (elapsed < 25000) return "relief"; // 20-25s: Relief/recovery
+  if (elapsed < 35000) return "friendlyPerson"; // 25-35s: Person approaches
+  return "conversation"; // 35-45s: "Are you okay?"
+}
+
+// Musical approaches for each story phase
+function generateApproachMusic(): MidiEvent {
+  // Calm, steady walking rhythm
+  if (Math.random() < 0.7) {
+    return {
+      type: "note",
+      note: {
+        name: "D",
+        octave: 4,
+        midiNumber: 62,
+        velocity: 60 + Math.random() * 20,
+        duration: 400 + Math.random() * 200,
+      },
+      currentKey: "D",
+      currentScale: "major",
+    };
+  }
+  return { type: "silence", duration: 300 + Math.random() * 200 };
+}
+
+function generateNearFallMusic(): MidiEvent {
+  // Dramatic, discordant, building tension
+  if (Math.random() < 0.9) {
+    const notes: Note[] = [];
+    // Add dissonant cluster in lower register
+    notes.push({
+      name: "F#",
+      octave: 2,
+      midiNumber: 42,
+      velocity: 80 + Math.random() * 30,
+      duration: 200 + Math.random() * 100,
+    });
+    notes.push({
+      name: "G",
+      octave: 2,
+      midiNumber: 43,
+      velocity: 85 + Math.random() * 30,
+      duration: 180 + Math.random() * 120,
+    });
+    notes.push({
+      name: "A",
+      octave: 3,
+      midiNumber: 57,
+      velocity: 90 + Math.random() * 25,
+      duration: 150 + Math.random() * 100,
+    });
+    
+    return {
+      type: "chord",
+      notes,
+      currentKey: "D",
+      currentScale: "minor",
+    };
+  }
+  return { type: "silence", duration: 50 + Math.random() * 100 };
+}
+
+function generateSaveMusic(): MidiEvent {
+  // Quick recovery, ascending motif, resolution
+  if (Math.random() < 0.8) {
+    const notes: Note[] = [];
+    // Ascending recovery sequence
+    const baseNote = 50 + Math.floor(Math.random() * 10); // Around D3-C4
+    notes.push({
+      name: NOTES[baseNote % 12],
+      octave: Math.floor(baseNote / 12),
+      midiNumber: baseNote + 12,
+      velocity: 70 + Math.random() * 20,
+      duration: 300,
+    });
+    notes.push({
+      name: NOTES[(baseNote + 2) % 12],
+      octave: Math.floor((baseNote + 2) / 12),
+      midiNumber: baseNote + 14,
+      velocity: 75 + Math.random() * 20,
+      duration: 250,
+    });
+    notes.push({
+      name: NOTES[(baseNote + 4) % 12],
+      octave: Math.floor((baseNote + 4) / 12),
+      midiNumber: baseNote + 16,
+      velocity: 80 + Math.random() * 15,
+      duration: 200,
+    });
+    
+    return {
+      type: "counterpoint",
+      notes,
+      currentKey: "D",
+      currentScale: "major", // Resolve to major
+    };
+  }
+  return { type: "silence", duration: 100 + Math.random() * 150 };
+}
+
+function generateReliefMusic(): MidiEvent {
+  // Calmer, relieved, settling down
+  if (Math.random() < 0.6) {
+    return {
+      type: "note",
+      note: {
+        name: "D",
+        octave: 4,
+        midiNumber: 62,
+        velocity: 50 + Math.random() * 20,
+        duration: 600 + Math.random() * 400,
+      },
+      currentKey: "D",
+      currentScale: "major",
+    };
+  }
+  return { type: "silence", duration: 400 + Math.random() * 300 };
+}
+
+function generateFriendlyPersonMusic(): MidiEvent {
+  // Gentle, approaching, caring melody
+  if (Math.random() < 0.7) {
+    const gentleNotes = [67, 69, 71, 72]; // G4, A4, B4, C5 - gentle, ascending
+    const noteIndex = Math.floor(Math.random() * gentleNotes.length);
+    const midiNote = gentleNotes[noteIndex];
+    
+    return {
+      type: "note",
+      note: {
+        name: NOTES[midiNote % 12],
+        octave: Math.floor(midiNote / 12),
+        midiNumber: midiNote,
+        velocity: 45 + Math.random() * 15, // Very gentle
+        duration: 500 + Math.random() * 300,
+      },
+      currentKey: "G",
+      currentScale: "major", // Warm, friendly key
+    };
+  }
+  return { type: "silence", duration: 200 + Math.random() * 300 };
+}
+
+function generateConversationMusic(): MidiEvent {
+  // Question-like musical phrases, caring and gentle
+  if (Math.random() < 0.5) {
+    // Create a questioning phrase with upward inflection
+    const notes: Note[] = [];
+    notes.push({
+      name: "G",
+      octave: 4,
+      midiNumber: 67,
+      velocity: 50,
+      duration: 400,
+    });
+    notes.push({
+      name: "A",
+      octave: 4,
+      midiNumber: 69,
+      velocity: 55,
+      duration: 300,
+    });
+    notes.push({
+      name: "B",
+      octave: 4,
+      midiNumber: 71,
+      velocity: 60, // Rising like a question
+      duration: 500,
+    });
+    
+    return {
+      type: "counterpoint",
+      notes,
+      currentKey: "G",
+      currentScale: "major",
+    };
+  }
+  return { type: "silence", duration: 300 + Math.random() * 500 };
 }

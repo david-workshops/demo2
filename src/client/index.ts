@@ -8,6 +8,9 @@ const socket = musicState.getSocket();
 const playToggleButton = document.getElementById(
   "play-toggle-btn",
 ) as HTMLButtonElement;
+const storyButton = document.getElementById(
+  "story-btn",
+) as HTMLButtonElement;
 const outputSelect = document.getElementById(
   "output-select",
 ) as HTMLSelectElement;
@@ -649,6 +652,7 @@ playToggleButton.addEventListener("click", async () => {
           playToggleButton.textContent = "PAUSE";
           playToggleButton.classList.remove("loading");
           playToggleButton.setAttribute("aria-label", "Pause piano playback");
+          storyButton.disabled = false; // Enable story button
         }, 500);
       });
     } else {
@@ -660,6 +664,7 @@ playToggleButton.addEventListener("click", async () => {
         playToggleButton.textContent = "PAUSE";
         playToggleButton.classList.remove("loading");
         playToggleButton.setAttribute("aria-label", "Pause piano playback");
+        storyButton.disabled = false; // Enable story button
       }, 500);
     }
   } else {
@@ -670,7 +675,31 @@ playToggleButton.addEventListener("click", async () => {
     // Change button text and aria-label
     playToggleButton.textContent = "PLAY";
     playToggleButton.setAttribute("aria-label", "Start piano playback");
+    storyButton.disabled = true; // Disable story button when stopped
   }
+});
+
+// Story button event listener
+storyButton.addEventListener("click", () => {
+  if (playToggleButton.textContent?.trim() === "PLAY") {
+    logToConsole("Please start the piano first before playing the story");
+    return;
+  }
+
+  storyButton.disabled = true;
+  storyButton.textContent = "PLAYING STORY...";
+  storyButton.setAttribute("aria-label", "Story in progress");
+  
+  socket.emit("start-face-planting-story");
+  logToConsole("Starting Face Planting Story - 45 seconds");
+  
+  // Re-enable button after story duration
+  setTimeout(() => {
+    storyButton.disabled = false;
+    storyButton.textContent = "FACE PLANTING STORY";
+    storyButton.setAttribute("aria-label", "Play face planting story");
+    logToConsole("Face Planting Story completed");
+  }, 45000); // 45 seconds
 });
 
 outputSelect.addEventListener("change", () => {

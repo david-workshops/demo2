@@ -160,6 +160,24 @@ h1 {
   cursor: wait;
 }
 
+.btn.story-btn {
+  background-color: var(--panel-bg);
+  font-size: 1rem;
+  padding: 8px 16px;
+}
+
+.btn.story-btn:disabled {
+  background-color: #444;
+  color: #888;
+  cursor: not-allowed;
+  border-color: #666;
+}
+
+.btn.story-btn:disabled:hover {
+  background-color: #444;
+  box-shadow: none;
+}
+
 @keyframes loading-pulse {
   0%, 100% {
     background-color: var(--panel-bg);
