@@ -40,6 +40,16 @@
           </div>
 
           <div class="control-group">
+            <button
+              id="house-toggle-btn"
+              class="btn"
+              aria-label="Toggle house music mode"
+            >
+              HOUSE MODE
+            </button>
+          </div>
+
+          <div class="control-group">
             <label for="output-select" class="control-label">OUTPUT:</label>
             <select
               id="output-select"
@@ -81,6 +91,14 @@
           <div class="info-row">
             <span class="info-label">SCALE:</span>
             <span id="current-scale" class="info-value">--</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">MODE:</span>
+            <span id="music-mode" class="info-value">CLASSICAL</span>
+          </div>
+          <div class="info-row house-intensity-row" style="display: none;">
+            <span class="info-label">HOUSE INTENSITY:</span>
+            <span id="house-intensity" class="info-value">--</span>
           </div>
           <div class="info-row notes-row">
             <span class="info-label notes-label">NOTES PLAYING:</span>

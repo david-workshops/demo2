@@ -24,6 +24,7 @@ class MusicStateService {
   private weatherData: WeatherData | null = null;
   private currentKey: string = "";
   private currentScale: string = "";
+  private houseIntensity: number = 0;
 
   // Pedal status
   private pedalStatus = {
@@ -118,6 +119,28 @@ class MusicStateService {
         this.notesPlaying = [];
         this.notifySubscribers({ type: "all-notes-off" });
         break;
+
+      case "houseBeat":
+        // Update key and scale
+        this.currentKey = event.currentKey;
+        this.currentScale = event.currentScale;
+        this.houseIntensity = event.intensity;
+
+        // Add all notes in the house beat
+        event.notes.forEach((note) => {
+          // Add timestamp to the note for tracking
+          note._startTime = Date.now();
+          this.notesPlaying.push(note);
+        });
+
+        this.notifySubscribers({ type: "notes-updated" });
+        this.notifySubscribers({ type: "key-updated" });
+        break;
+
+      case "housePause":
+        // House pause - no specific action needed for state management
+        // The pause is handled by the server not sending events
+        break;
     }
 
     // Cleanup notes that are finished playing
@@ -167,6 +190,11 @@ class MusicStateService {
 
   public getCurrentScale(): string {
     return this.currentScale;
+  }
+
+  // Get house intensity
+  public getHouseIntensity(): number {
+    return this.houseIntensity;
   }
 
   // Get pedal status

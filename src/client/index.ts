@@ -8,6 +8,9 @@ const socket = musicState.getSocket();
 const playToggleButton = document.getElementById(
   "play-toggle-btn",
 ) as HTMLButtonElement;
+const houseToggleButton = document.getElementById(
+  "house-toggle-btn",
+) as HTMLButtonElement;
 const outputSelect = document.getElementById(
   "output-select",
 ) as HTMLSelectElement;
@@ -17,6 +20,13 @@ const visualization = document.getElementById(
 const currentKeyDisplay = document.getElementById("current-key") as HTMLElement;
 const currentScaleDisplay = document.getElementById(
   "current-scale",
+) as HTMLElement;
+const musicModeDisplay = document.getElementById("music-mode") as HTMLElement;
+const houseIntensityDisplay = document.getElementById(
+  "house-intensity",
+) as HTMLElement;
+const houseIntensityRow = document.querySelector(
+  ".house-intensity-row",
 ) as HTMLElement;
 const notesPlayingDisplay = document.getElementById(
   "notes-playing",
@@ -47,6 +57,9 @@ const pedalStatus = musicState.getPedalStatus();
 // Weather state
 let weatherUpdateInterval: number | null = null;
 const WEATHER_UPDATE_INTERVAL = 10 * 60 * 1000; // 10 minutes
+
+// House mode state
+let houseModeEnabled = false;
 
 // Initialize audio
 function initAudio() {
@@ -567,6 +580,12 @@ musicState.subscribe((event: MusicStateEvent) => {
       // Update key and scale display
       currentKeyDisplay.textContent = musicState.getCurrentKey();
       currentScaleDisplay.textContent = musicState.getCurrentScale();
+
+      // Update house intensity if in house mode
+      if (houseModeEnabled) {
+        const intensity = musicState.getHouseIntensity();
+        houseIntensityDisplay.textContent = `${Math.round(intensity * 100)}%`;
+      }
       break;
 
     case "pedals-updated":
@@ -681,6 +700,27 @@ outputSelect.addEventListener("change", () => {
         logToConsole("MIDI not available, falling back to browser audio");
       }
     });
+  }
+});
+
+// House mode toggle
+houseToggleButton.addEventListener("click", () => {
+  houseModeEnabled = !houseModeEnabled;
+
+  if (houseModeEnabled) {
+    socket.emit("enable-house");
+    houseToggleButton.textContent = "CLASSICAL MODE";
+    houseToggleButton.setAttribute("aria-label", "Switch to classical mode");
+    musicModeDisplay.textContent = "HOUSE";
+    houseIntensityRow.style.display = "flex";
+    logToConsole("House music mode enabled");
+  } else {
+    socket.emit("disable-house");
+    houseToggleButton.textContent = "HOUSE MODE";
+    houseToggleButton.setAttribute("aria-label", "Switch to house mode");
+    musicModeDisplay.textContent = "CLASSICAL";
+    houseIntensityRow.style.display = "none";
+    logToConsole("Classical music mode enabled");
   }
 });
 

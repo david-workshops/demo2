@@ -24,6 +24,13 @@ let _noteCounter = 0;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let density = 0.7; // Probability of generating a note vs. silence
 
+// House music state variables
+let houseMode = false;
+let houseIntensity = 0.1; // Start with low intensity
+let lastIntensityChange = Date.now();
+let houseBeatCounter = 0;
+let lastPauseTime = Date.now();
+
 // Apply weather influence to music parameters
 function applyWeatherInfluence(weather: WeatherData | null) {
   // Reset to defaults if no weather data
@@ -290,11 +297,162 @@ function decidePedal(weather: WeatherData | null): Pedal | null {
   return null;
 }
 
+// House music functions
+function enableHouseMode(): void {
+  houseMode = true;
+  houseIntensity = 0.1;
+  lastIntensityChange = Date.now();
+  houseBeatCounter = 0;
+  lastPauseTime = Date.now();
+  // Set appropriate key and scale for house music
+  currentKey = 0; // C major works well for house
+  currentScale = "minor"; // Often use minor for house music
+}
+
+// Gradually increase intensity over time
+function updateHouseIntensity(): void {
+  const now = Date.now();
+  const timeSinceLastChange = now - lastIntensityChange;
+
+  // Increase intensity every 15-30 seconds
+  if (timeSinceLastChange > 15000 + Math.random() * 15000) {
+    houseIntensity = Math.min(1.0, houseIntensity + 0.05 + Math.random() * 0.1);
+    lastIntensityChange = now;
+  }
+
+  // Occasionally reset intensity for dramatic effect
+  if (houseIntensity > 0.8 && Math.random() < 0.01) {
+    houseIntensity = 0.2;
+    lastIntensityChange = now;
+  }
+}
+
+// Generate house music beat pattern
+function generateHouseBeat(): Note[] {
+  const notes: Note[] = [];
+  const beatPosition = houseBeatCounter % 16; // 16-beat pattern
+
+  // Four-on-the-floor kick pattern (adapted for piano - low bass notes)
+  if (beatPosition % 4 === 0) {
+    const kickNote: Note = {
+      name: NOTES[currentKey],
+      octave: 1 + Math.floor(houseIntensity * 2), // Lower octaves for bass
+      midiNumber: currentKey + (1 + Math.floor(houseIntensity * 2)) * 12 + 12,
+      velocity: Math.floor(60 + houseIntensity * 67), // 60-127 based on intensity
+      duration: 200 + houseIntensity * 300, // Shorter, punchier notes
+    };
+    notes.push(kickNote);
+  }
+
+  // Hi-hat pattern (adapted for piano - higher register short notes)
+  if (beatPosition % 2 === 1 && houseIntensity > 0.3) {
+    const scaleNotes = getScaleNotes();
+    const hihatNote: Note = {
+      name: NOTES[scaleNotes[Math.floor(Math.random() * scaleNotes.length)]],
+      octave: 5 + Math.floor(houseIntensity * 2), // Higher octaves
+      midiNumber:
+        scaleNotes[Math.floor(Math.random() * scaleNotes.length)] +
+        (5 + Math.floor(houseIntensity * 2)) * 12 +
+        12,
+      velocity: Math.floor(30 + houseIntensity * 40), // Quieter than kick
+      duration: 100 + houseIntensity * 100, // Very short
+    };
+    notes.push(hihatNote);
+  }
+
+  // Bassline (every 8th beat with increasing complexity)
+  if (beatPosition % 8 === 4 && houseIntensity > 0.2) {
+    const scaleNotes = getScaleNotes();
+    const bassNote: Note = {
+      name: NOTES[scaleNotes[1 + Math.floor(Math.random() * 3)]], // Use 2nd, 3rd, or 4th scale degree
+      octave: 2,
+      midiNumber: scaleNotes[1 + Math.floor(Math.random() * 3)] + 2 * 12 + 12,
+      velocity: Math.floor(50 + houseIntensity * 50),
+      duration: 300 + houseIntensity * 200,
+    };
+    notes.push(bassNote);
+  }
+
+  // Melodic elements (when intensity is high)
+  if (houseIntensity > 0.6 && Math.random() < houseIntensity * 0.3) {
+    const scaleNotes = getScaleNotes();
+    const melodyNote: Note = {
+      name: NOTES[scaleNotes[Math.floor(Math.random() * scaleNotes.length)]],
+      octave: 4 + Math.floor(Math.random() * 2),
+      midiNumber:
+        scaleNotes[Math.floor(Math.random() * scaleNotes.length)] +
+        (4 + Math.floor(Math.random() * 2)) * 12 +
+        12,
+      velocity: Math.floor(40 + houseIntensity * 60),
+      duration: 150 + Math.random() * 200,
+    };
+    notes.push(melodyNote);
+  }
+
+  houseBeatCounter++;
+  return notes;
+}
+
+// Decide if we should pause for house music
+function shouldHousePause(): boolean {
+  const now = Date.now();
+  const timeSinceLastPause = now - lastPauseTime;
+
+  // Random pauses every 30-60 seconds
+  if (
+    timeSinceLastPause > 30000 + Math.random() * 30000 &&
+    Math.random() < 0.15
+  ) {
+    lastPauseTime = now;
+    return true;
+  }
+
+  // More frequent short pauses when intensity is high
+  if (houseIntensity > 0.7 && Math.random() < 0.05) {
+    return true;
+  }
+
+  return false;
+}
+
 // Main function to generate MIDI events
 export function generateMidiEvent(
   weather: WeatherData | null = null,
+  enableHouse: boolean = false,
 ): MidiEvent {
   _noteCounter++;
+
+  // Enable house mode if requested
+  if (enableHouse && !houseMode) {
+    enableHouseMode();
+  }
+
+  // House music generation
+  if (houseMode) {
+    updateHouseIntensity();
+
+    // Check for random pauses
+    if (shouldHousePause()) {
+      return {
+        type: "housePause",
+        duration: 500 + Math.random() * 2000, // 0.5-2.5 second pauses
+      };
+    }
+
+    // Generate house beat
+    const houseBeatNotes = generateHouseBeat();
+    if (houseBeatNotes.length > 0) {
+      return {
+        type: "houseBeat",
+        notes: houseBeatNotes,
+        currentKey: NOTES[currentKey],
+        currentScale,
+        intensity: houseIntensity,
+      };
+    }
+  }
+
+  // Original classical music generation (when not in house mode)
   maybeChangeMusicalContext();
 
   const settings = applyWeatherInfluence(weather);

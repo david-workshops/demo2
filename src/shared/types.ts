@@ -44,7 +44,15 @@ export type MidiEvent =
     }
   | { type: "pedal"; pedal: Pedal }
   | { type: "silence"; duration: number }
-  | { type: "allNotesOff" };
+  | { type: "allNotesOff" }
+  | {
+      type: "houseBeat";
+      notes: Note[];
+      currentKey: string;
+      currentScale: Scale;
+      intensity: number;
+    }
+  | { type: "housePause"; duration: number };
 
 // Extended MIDI for disklavier
 export interface XPMidiParams {

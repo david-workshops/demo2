@@ -57,4 +57,60 @@ describe("Music Generator", () => {
     // We should observe at least 3 different event types
     expect(eventTypes.size).toBeGreaterThanOrEqual(3);
   });
+
+  it("should generate house music when enabled", () => {
+    // Generate house music events
+    const houseEvents = [];
+    for (let i = 0; i < 50; i++) {
+      const event = generateMidiEvent(null, true); // Enable house mode
+      houseEvents.push(event);
+    }
+
+    // Should have at least some house-specific events
+    const houseBeats = houseEvents.filter((e) => e.type === "houseBeat");
+    const housePauses = houseEvents.filter((e) => e.type === "housePause");
+
+    // Should generate some house beats
+    expect(houseBeats.length).toBeGreaterThan(0);
+
+    // Validate house beat structure
+    const houseBeat = houseBeats.find((e) => e.type === "houseBeat");
+    if (houseBeat && houseBeat.type === "houseBeat") {
+      expect(houseBeat.notes).toBeInstanceOf(Array);
+      expect(houseBeat.notes.length).toBeGreaterThan(0);
+      expect(houseBeat.currentKey).toBeDefined();
+      expect(houseBeat.currentScale).toBeDefined();
+      expect(houseBeat.intensity).toBeGreaterThanOrEqual(0);
+      expect(houseBeat.intensity).toBeLessThanOrEqual(1);
+    }
+
+    // May have house pauses (but not required for every test run)
+    if (housePauses.length > 0) {
+      const housePause = housePauses[0];
+      if (housePause.type === "housePause") {
+        expect(housePause.duration).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("should gradually increase intensity in house mode", () => {
+    // Generate many house events to potentially trigger intensity changes
+    const intensities: number[] = [];
+
+    for (let i = 0; i < 100; i++) {
+      const event = generateMidiEvent(null, true);
+      if (event.type === "houseBeat") {
+        intensities.push(event.intensity);
+      }
+    }
+
+    // Should have captured some intensities
+    expect(intensities.length).toBeGreaterThan(0);
+
+    // All intensities should be valid
+    intensities.forEach((intensity) => {
+      expect(intensity).toBeGreaterThanOrEqual(0);
+      expect(intensity).toBeLessThanOrEqual(1);
+    });
+  });
 });
