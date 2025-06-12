@@ -52,6 +52,16 @@
           </div>
 
           <div class="control-group">
+            <button
+              id="jungle-toggle-btn"
+              class="btn secondary"
+              aria-label="Toggle jungle symphony mode"
+            >
+              JUNGLE SYMPHONY
+            </button>
+          </div>
+
+          <div class="control-group">
             <a
               href="http://localhost:5174"
               class="visualizer-link"
@@ -66,6 +76,10 @@
         </div>
 
         <div class="info-panel" aria-live="polite">
+          <div class="info-row">
+            <span class="info-label">MODE:</span>
+            <span id="current-mode" class="info-value">Normal</span>
+          </div>
           <div class="info-row">
             <span class="info-label">WEATHER:</span>
             <span id="weather-info" class="info-value">--</span>

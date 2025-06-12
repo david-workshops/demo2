@@ -160,6 +160,29 @@ h1 {
   cursor: wait;
 }
 
+.btn.secondary {
+  background-color: var(--bg-color);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.btn.secondary:hover {
+  background-color: var(--accent-color);
+  color: var(--bg-color);
+}
+
+.btn.secondary.active {
+  background-color: #ff6600;
+  border-color: #ff6600;
+  color: var(--bg-color);
+  box-shadow: 0 0 15px rgba(255, 102, 0, 0.5);
+}
+
+.btn.secondary.active:hover {
+  background-color: #ff8833;
+  border-color: #ff8833;
+}
+
 @keyframes loading-pulse {
   0%, 100% {
     background-color: var(--panel-bg);

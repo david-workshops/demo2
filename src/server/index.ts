@@ -2,7 +2,12 @@ import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import path from "path";
-import { generateMidiEvent } from "./music-generator";
+import { 
+  generateMidiEvent, 
+  enableJungleSymphony, 
+  disableJungleSymphony, 
+  isJungleSymphonyActive 
+} from "./music-generator";
 import { WeatherData } from "../shared/types";
 import dotenv from "dotenv";
 import { freepikService } from "./freepik-service";
@@ -266,6 +271,26 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Enable jungle symphony mode
+  socket.on("enable-jungle-symphony", () => {
+    console.log("Enabling jungle symphony mode");
+    enableJungleSymphony();
+    socket.emit("jungle-symphony-status", { enabled: true });
+  });
+
+  // Disable jungle symphony mode
+  socket.on("disable-jungle-symphony", () => {
+    console.log("Disabling jungle symphony mode");
+    disableJungleSymphony();
+    socket.emit("jungle-symphony-status", { enabled: false });
+  });
+
+  // Get jungle symphony status
+  socket.on("get-jungle-symphony-status", () => {
+    const enabled = isJungleSymphonyActive();
+    socket.emit("jungle-symphony-status", { enabled });
+  });
+
   // Handle disconnect
   socket.on("disconnect", () => {
     if (intervalId) {
@@ -293,6 +318,10 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Visit http://localhost:${PORT} to view the application`);
+  
+  // Enable jungle symphony mode by default for issue #40
+  enableJungleSymphony();
+  console.log("🌳 Jungle Symphony mode is now active by default!");
 });
 
 export default server;

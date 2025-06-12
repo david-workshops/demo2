@@ -1,4 +1,4 @@
-import { MidiEvent, Note, Scale, Pedal, WeatherData } from "../shared/types";
+import { MidiEvent, Note, Scale, Pedal, WeatherData, JungleAnimal } from "../shared/types";
 
 // Music theory constants
 const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -23,6 +23,77 @@ let lastModeChangeTime = Date.now();
 let _noteCounter = 0;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let density = 0.7; // Probability of generating a note vs. silence
+
+// Jungle Symphony mode state
+let jungleSymphonyMode = false;
+let lastAnimalChangeTime = Date.now();
+let currentDominantAnimal: JungleAnimal = "bird";
+
+// Jungle animal characteristics
+const JUNGLE_ANIMALS: Record<JungleAnimal, {
+  octaveRange: { min: number; max: number };
+  velocityRange: { min: number; max: number };
+  durationRange: { min: number; max: number };
+  density: number;
+  preferredScales: Scale[];
+  notesPerEvent: { min: number; max: number };
+  rhythmPattern?: number[]; // relative timing multipliers
+}> = {
+  bird: {
+    octaveRange: { min: 5, max: 7 },
+    velocityRange: { min: 80, max: 120 },
+    durationRange: { min: 150, max: 800 },
+    density: 0.8,
+    preferredScales: ["pentatonicMajor", "major", "mixolydian"],
+    notesPerEvent: { min: 1, max: 4 },
+    rhythmPattern: [1, 0.5, 0.5, 1, 0.25, 0.25, 0.25, 0.25],
+  },
+  monkey: {
+    octaveRange: { min: 4, max: 6 },
+    velocityRange: { min: 60, max: 100 },
+    durationRange: { min: 200, max: 600 },
+    density: 0.7,
+    preferredScales: ["pentatonicMinor", "minor", "dorian"],
+    notesPerEvent: { min: 2, max: 5 },
+    rhythmPattern: [0.5, 0.5, 0.25, 0.75, 0.5, 0.5],
+  },
+  tiger: {
+    octaveRange: { min: 1, max: 3 },
+    velocityRange: { min: 90, max: 127 },
+    durationRange: { min: 800, max: 2500 },
+    density: 0.3,
+    preferredScales: ["minor", "phrygian", "locrian"],
+    notesPerEvent: { min: 1, max: 2 },
+    rhythmPattern: [2, 1, 2, 3],
+  },
+  elephant: {
+    octaveRange: { min: 0, max: 2 },
+    velocityRange: { min: 70, max: 110 },
+    durationRange: { min: 1200, max: 4000 },
+    density: 0.2,
+    preferredScales: ["minor", "dorian", "pentatonicMinor"],
+    notesPerEvent: { min: 1, max: 3 },
+    rhythmPattern: [4, 2, 4, 6],
+  },
+  frog: {
+    octaveRange: { min: 3, max: 5 },
+    velocityRange: { min: 50, max: 90 },
+    durationRange: { min: 300, max: 700 },
+    density: 0.6,
+    preferredScales: ["pentatonicMinor", "minor", "wholeTone"],
+    notesPerEvent: { min: 1, max: 2 },
+    rhythmPattern: [0.5, 0.5, 0.5, 1, 0.5, 0.5, 0.5],
+  },
+  insect: {
+    octaveRange: { min: 6, max: 8 },
+    velocityRange: { min: 30, max: 70 },
+    durationRange: { min: 100, max: 2000 },
+    density: 0.9,
+    preferredScales: ["wholeTone", "lydian", "major"],
+    notesPerEvent: { min: 1, max: 3 },
+    rhythmPattern: [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25],
+  },
+};
 
 // Apply weather influence to music parameters
 function applyWeatherInfluence(weather: WeatherData | null) {
@@ -254,6 +325,137 @@ function maybeChangeMusicalContext(): void {
   }
 }
 
+// Function to enable jungle symphony mode
+export function enableJungleSymphony(): void {
+  jungleSymphonyMode = true;
+  // Start with a nature-friendly scale
+  currentScale = "pentatonicMinor";
+  currentKey = 5; // F
+  lastAnimalChangeTime = Date.now();
+  currentDominantAnimal = "bird";
+  console.log("Jungle Symphony mode enabled! 🦜🐒🐅🐘🐸🦗");
+}
+
+// Function to disable jungle symphony mode
+export function disableJungleSymphony(): void {
+  jungleSymphonyMode = false;
+  // Reset to default musical parameters
+  currentScale = "major";
+  currentKey = Math.floor(Math.random() * 12);
+  console.log("Jungle Symphony mode disabled. Returning to normal mode.");
+}
+
+// Function to check if jungle symphony mode is active
+export function isJungleSymphonyActive(): boolean {
+  return jungleSymphonyMode;
+}
+
+// Change the dominant animal periodically in jungle mode
+function maybeChangeDominantAnimal(): void {
+  if (!jungleSymphonyMode) return;
+  
+  const now = Date.now();
+  
+  // Change dominant animal every 30-90 seconds
+  if (now - lastAnimalChangeTime > (30 + Math.random() * 60) * 1000) {
+    const animals: JungleAnimal[] = ["bird", "monkey", "tiger", "elephant", "frog", "insect"];
+    const newAnimal = animals[Math.floor(Math.random() * animals.length)];
+    currentDominantAnimal = newAnimal;
+    
+    // Adapt scale to the new dominant animal
+    const animalConfig = JUNGLE_ANIMALS[newAnimal];
+    if (animalConfig.preferredScales.length > 0) {
+      currentScale = animalConfig.preferredScales[Math.floor(Math.random() * animalConfig.preferredScales.length)];
+    }
+    
+    lastAnimalChangeTime = now;
+  }
+}
+
+// Generate animal-specific notes
+function generateAnimalSound(animal: JungleAnimal): Note[] {
+  const config = JUNGLE_ANIMALS[animal];
+  const scaleNotes = getScaleNotes();
+  const notes: Note[] = [];
+  
+  const numNotes = Math.floor(Math.random() * (config.notesPerEvent.max - config.notesPerEvent.min + 1)) + config.notesPerEvent.min;
+  
+  for (let i = 0; i < numNotes; i++) {
+    const noteIndex = Math.floor(Math.random() * scaleNotes.length);
+    const note = scaleNotes[noteIndex];
+    
+    // Animal-specific octave
+    const octave = Math.floor(Math.random() * (config.octaveRange.max - config.octaveRange.min + 1)) + config.octaveRange.min;
+    const midiNum = note + octave * 12 + 12;
+    
+    // Animal-specific velocity
+    const velocity = Math.floor(Math.random() * (config.velocityRange.max - config.velocityRange.min + 1)) + config.velocityRange.min;
+    
+    // Animal-specific duration
+    const duration = Math.random() * (config.durationRange.max - config.durationRange.min) + config.durationRange.min;
+    
+    notes.push({
+      name: NOTES[note],
+      octave,
+      midiNumber: midiNum,
+      velocity,
+      duration,
+    });
+  }
+  
+  return notes;
+}
+
+// Generate jungle symphony event
+function generateJungleEvent(): MidiEvent {
+  // Randomly choose an animal, with bias toward the current dominant animal
+  const animals: JungleAnimal[] = ["bird", "monkey", "tiger", "elephant", "frog", "insect"];
+  let chosenAnimal: JungleAnimal;
+  
+  if (Math.random() < 0.5) {
+    // 50% chance to use dominant animal
+    chosenAnimal = currentDominantAnimal;
+  } else {
+    // 50% chance to use any animal, but still weighted
+    const weights = animals.map(animal => {
+      const config = JUNGLE_ANIMALS[animal];
+      return config.density;
+    });
+    
+    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    let random = Math.random() * totalWeight;
+    
+    chosenAnimal = animals[0]; // fallback
+    for (let i = 0; i < animals.length; i++) {
+      random -= weights[i];
+      if (random <= 0) {
+        chosenAnimal = animals[i];
+        break;
+      }
+    }
+  }
+  
+  // Check if this animal should make a sound based on its density
+  const config = JUNGLE_ANIMALS[chosenAnimal];
+  if (Math.random() > config.density) {
+    return {
+      type: "silence",
+      duration: Math.random() * 500 + 100,
+    };
+  }
+  
+  // Generate the animal sound
+  const animalNotes = generateAnimalSound(chosenAnimal);
+  
+  return {
+    type: "jungle-animal",
+    animal: chosenAnimal,
+    notes: animalNotes,
+    currentKey: NOTES[currentKey],
+    currentScale,
+  };
+}
+
 // Track last time sustain pedal was turned off
 let lastSustainOffTime = Date.now();
 let sustainPedalEnabled = true;
@@ -296,6 +498,12 @@ export function generateMidiEvent(
 ): MidiEvent {
   _noteCounter++;
   maybeChangeMusicalContext();
+  
+  // If jungle symphony mode is active, handle it differently
+  if (jungleSymphonyMode) {
+    maybeChangeDominantAnimal();
+    return generateJungleEvent();
+  }
 
   const settings = applyWeatherInfluence(weather);
 

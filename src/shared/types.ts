@@ -12,6 +12,14 @@ export type Scale =
   | "pentatonicMinor"
   | "wholeTone";
 
+export type JungleAnimal =
+  | "bird"
+  | "monkey"
+  | "tiger"
+  | "elephant"
+  | "frog"
+  | "insect";
+
 export interface Note {
   name: string; // Note name (C, C#, etc.)
   octave: number; // Octave number (0-8)
@@ -38,6 +46,13 @@ export type MidiEvent =
   | { type: "chord"; notes: Note[]; currentKey: string; currentScale: Scale }
   | {
       type: "counterpoint";
+      notes: Note[];
+      currentKey: string;
+      currentScale: Scale;
+    }
+  | {
+      type: "jungle-animal";
+      animal: JungleAnimal;
       notes: Note[];
       currentKey: string;
       currentScale: Scale;
