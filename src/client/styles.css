@@ -160,6 +160,11 @@ h1 {
   cursor: wait;
 }
 
+.btn-small {
+  padding: 8px 16px;
+  font-size: 1rem;
+}
+
 @keyframes loading-pulse {
   0%, 100% {
     background-color: var(--panel-bg);
@@ -182,6 +187,37 @@ h1 {
   font-size: 1.2rem;
   cursor: pointer;
   border-radius: 4px;
+}
+
+.slider {
+  -webkit-appearance: none;
+  width: 120px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  outline: none;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-color);
+  border: 2px solid var(--border-color);
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-color);
+  border: 2px solid var(--border-color);
+  cursor: pointer;
 }
 
 .info-panel {

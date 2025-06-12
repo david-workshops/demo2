@@ -89,6 +89,23 @@ The application uses XP MIDI (Extended Precision MIDI) parameters for enhanced c
 
 Note: MIDI output requires a browser that supports the Web MIDI API (Chrome, Edge, Opera).
 
+## SF Street Sounds
+
+The application includes environmental street sounds that play alongside the piano music:
+
+- **Horn sounds** - Low frequency car horns
+- **Wind sounds** - Filtered white noise simulating wind
+- **Siren sounds** - Emergency vehicle sirens with frequency sweeps
+- **Rustling leaves** - High frequency filtered noise
+- **Brake screech sounds** - Harsh high frequency brake sounds
+
+Street sounds are contextually triggered based on weather conditions:
+- Rain/storms trigger more sirens and brake sounds
+- Windy/cold conditions produce more wind and rustling sounds
+- Clear conditions generate occasional horn sounds
+
+Use the "STREET SOUNDS" toggle and volume slider in the interface to control this feature.
+
 ## Demo
 
 Watch the Player Piano in action with a Yamaha Disklavier DC6X ENPRO:
